@@ -65,9 +65,9 @@ export default function BlogHome() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <Link href="/dashboard" className="text-gray-900">Home</Link>
-            <Link href="#" className="hover:text-blue-600 transition">Articles</Link>
-            <Link href="#" className="hover:text-blue-600 transition">Authors</Link>
-            <Link href="#" className="hover:text-blue-600 transition">About</Link>
+            <Link href="/articles" className="hover:text-blue-600 transition">Articles</Link>
+            <Link href="/authors" className="hover:text-blue-600 transition">Authors</Link>
+            <Link href="/about" className="hover:text-blue-600 transition">About</Link>
           </div>
 
           {/* Actions */}

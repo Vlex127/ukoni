@@ -7,6 +7,7 @@ import {
   Search,
   Sparkles,
   Twitter,
+  Instagram,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -16,7 +17,7 @@ import Image from "next/image"; // Ensure images exist or comment out Image comp
 const TOP_AUTHORS = [
   {
     id: 1,
-    name: "Henry Qells",
+    name: "Sophie Ukon",
     role: "Editor in Chief",
     bio: "Obsessed with design systems and 3D web interfaces. Writing about the intersection of art and code.",
     articles: 154,
@@ -98,8 +99,8 @@ const ALL_AUTHORS = [
   },
   {
     id: 11,
-    name: "Bruce Banner",
-    role: "Backend Dev",
+    name: "Vincent Iwuno",
+    role: "Software Developer",
     articles: 42,
     color: "bg-lime-100",
   },
@@ -174,7 +175,7 @@ export default function AuthorsPage() {
                    </div>
                    <div className="flex gap-3 text-gray-400">
                       <Twitter size={16} className="hover:text-blue-400 cursor-pointer transition" />
-                      <Linkedin size={16} className="hover:text-blue-700 cursor-pointer transition" />
+                      <Instagram size={16} className="hover:text-blue-700 cursor-pointer transition" />
                    </div>
                 </div>
               </div>

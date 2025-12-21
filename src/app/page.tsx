@@ -1,5 +1,16 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Github,
+  Linkedin,
+  Search,
+  Sparkles,
+  Instagram,
+  Menu,
+  X,
+} from "lucide-react";
 import Link from "next/link";
-import { ArrowRight, Search, Menu, X, Sparkles } from "lucide-react";
 
 // Mock Data for Blog Posts
 const FEATURED_POST = {
@@ -9,7 +20,7 @@ const FEATURED_POST = {
   author: "Henry Qells",
   date: "Oct 29, 2024",
   readTime: "5 min read",
-  imageColor: "bg-blue-100", // Placeholder for actual image
+  imageColor: "bg-blue-100", 
 };
 
 const LATEST_POSTS = [
@@ -48,6 +59,8 @@ const LATEST_POSTS = [
 const CATEGORIES = ["All", "Design", "Development", "Productivity", "Lifestyle", "Business"];
 
 export default function BlogHome() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-blue-100">
       
@@ -64,7 +77,7 @@ export default function BlogHome() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link href="/dashboard" className="text-gray-900">Home</Link>
+            <Link href="/" className="text-gray-900">Home</Link>
             <Link href="/articles" className="hover:text-blue-600 transition">Articles</Link>
             <Link href="/authors" className="hover:text-blue-600 transition">Authors</Link>
             <Link href="/about" className="hover:text-blue-600 transition">About</Link>
@@ -75,17 +88,25 @@ export default function BlogHome() {
             <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition">
               <Search size={20} />
             </button>
-            <Link 
-              href="/login" 
-              className="hidden md:inline-flex px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition"
+
+            <button 
+              className="md:hidden p-2 text-gray-900 hover:bg-gray-100 rounded-full transition"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              Sign In
-            </Link>
-            <button className="md:hidden p-2 text-gray-900">
-              <Menu size={24} />
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
+
+        {/* --- Mobile Menu Dropdown --- */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-100 shadow-xl px-6 py-8 flex flex-col gap-6 z-40 animate-in slide-in-from-top-2">
+            <Link href="/" className="text-lg font-medium text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link href="/articles" className="text-lg font-medium text-gray-500 hover:text-blue-600" onClick={() => setIsMobileMenuOpen(false)}>Articles</Link>
+            <Link href="/authors" className="text-lg font-medium text-gray-500 hover:text-blue-600" onClick={() => setIsMobileMenuOpen(false)}>Authors</Link>
+            <Link href="/about" className="text-lg font-medium text-gray-500 hover:text-blue-600" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
+          </div>
+        )}
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
@@ -101,13 +122,15 @@ export default function BlogHome() {
           <p className="text-lg text-gray-500 mb-8 leading-relaxed">
             Ukoni is a community of writers, developers, and creators sharing insights on technology, design, and digital well-being.
           </p>
-          <div className="flex justify-center gap-4">
+          
+          {/* Responsive Hero Form */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md sm:max-w-none mx-auto">
             <input 
               type="email" 
               placeholder="Enter your email" 
-              className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+              className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-80 shadow-sm"
             />
-            <button className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+            <button className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 w-full sm:w-auto whitespace-nowrap">
               Subscribe
             </button>
           </div>
@@ -205,16 +228,26 @@ export default function BlogHome() {
              <p className="text-gray-400">
                Join 23K+ subscribers getting the best content delivered to their inbox weekly. No spam, ever.
              </p>
-             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <input 
-                  type="email" 
-                  placeholder="john@example.com" 
-                  className="px-4 py-3 rounded-lg text-gray-900 focus:outline-none w-full sm:w-80"
-                />
-                <button className="px-6 py-3 bg-blue-600 font-bold rounded-lg hover:bg-blue-500 transition">
-                  Get Started
-                </button>
-             </div>
+             
+             {/* Responsive Footer Form */}
+<div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-md sm:max-w-none mx-auto">
+  <input 
+    type="email" 
+    placeholder="john@example.com"
+    className="
+      px-4 py-3 rounded-lg
+      text-gray-900
+      bg-white
+      focus:bg-white
+      focus:outline-none
+      w-full sm:w-80
+    "
+  />
+  <button className="px-6 py-3 bg-blue-600 font-bold rounded-lg hover:bg-blue-500 transition w-full sm:w-auto whitespace-nowrap">
+    Get Started
+  </button>
+</div>
+
            </div>
         </section>
 
@@ -222,20 +255,34 @@ export default function BlogHome() {
 
       {/* --- Simple Footer --- */}
       <footer className="border-t border-gray-100 mt-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div className="flex items-center gap-2 font-bold text-lg">
+             <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white">
+               <Sparkles size={12} fill="currentColor" />
+             </div>
              Ukoni
           </div>
           <div className="text-sm text-gray-500">
-            &copy; 2024 Ukoni Inc. All rights reserved.
+            &copy; 2025 Ukoni Inc. All rights reserved.
           </div>
-          <div className="flex gap-6 text-gray-400">
-            <Link href="#" className="hover:text-gray-900">Twitter</Link>
-            <Link href="#" className="hover:text-gray-900">GitHub</Link>
-            <Link href="#" className="hover:text-gray-900">LinkedIn</Link>
+          <div className="flex gap-6 text-gray-400 items-center">
+            <Link href="#" className="hover:text-gray-900 transition">
+              <XBrandIcon className="w-5 h-5" />
+            </Link>
+            <Link href="#" className="hover:text-gray-900"><Instagram size={20} className="hover:text-pink-600 cursor-pointer transition" /></Link>
+            <Link href="#" className="hover:text-gray-900"><Linkedin size={20} className="hover:text-blue-700 cursor-pointer transition" /></Link>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+// --- Custom SVG Component for the X Brand Logo ---
+function XBrandIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+    </svg>
   );
 }

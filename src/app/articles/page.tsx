@@ -41,7 +41,7 @@ const ARTICLES = [
     title: "Next.js 15: What to Expect",
     excerpt: "A deep dive into the upcoming features of the React framework and how it changes the game.",
     category: "Technology",
-    author: "Michael Chen",
+    author: "Vincent Iwuno",
     date: "Dec 10, 2024",
     readTime: "12 min",
     imageColor: "bg-blue-100",

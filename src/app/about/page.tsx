@@ -65,7 +65,7 @@ export default function AboutPage() {
           {/* Image Placeholder */}
           <div className="relative h-[500px] bg-white rounded-[2.5rem] p-4 shadow-xl shadow-blue-900/5 rotate-3 border border-gray-100">
              <div className="w-full h-full bg-gray-100 rounded-[2rem] overflow-hidden relative">
-                {/* Replace with actual image: <Image src="/office.jpg" fill className="object-cover" /> */}
+               <Image src="/group.png" alt="team photo" fill className="object-cover" />  
                 <div className="absolute inset-0 flex items-center justify-center text-gray-400 font-medium">
                    Office / Team Photo
                 </div>
@@ -118,7 +118,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <TeamMember name="Alex Rivers" role="Founder & CEO" color="bg-blue-500" />
             <TeamMember name="Sarah Jenks" role="Head of Design" color="bg-purple-500" />
-            <TeamMember name="Michael Chen" role="CTO" color="bg-teal-500" />
+            <TeamMember name="Vincent Iwuno" role="CTO" color="bg-teal-500" />
             <TeamMember name="You?" role="We are hiring!" color="bg-gray-800 border-2 border-dashed border-gray-700" isHiring />
           </div>
         </div>

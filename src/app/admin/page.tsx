@@ -1,3 +1,4 @@
+"use client"
 import VisitorsChart from "@/components/ui/VisitorsChart";
 import {
   Bell,
@@ -9,7 +10,8 @@ import {
   MessageCircle,
   Plus,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -44,7 +46,10 @@ export default function Home() {
           </div>
           {/* User Avatar */}
           <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white shadow-sm overflow-hidden relative">
-             {/* <Image src="/avatar.jpg" alt="User" fill className="object-cover"/> */}
+             <a href="/admin/profile">
+             {/*get iamge from user db */}
+             <Image src="/avatar.jpg" alt="User" fill className="object-cover"/> 
+             </a>
           </div>
         </div>
       </header>

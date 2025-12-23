@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   LogOut,
   Mail,
+  Sparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -38,9 +39,9 @@ export default function AdminLayout({
       <aside className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-8 fixed h-full justify-between z-40">
         <div className="flex flex-col items-center gap-y-8">
           {/* Logo Placeholder */}
-          <div className="w-10 h-10 bg-blue-600 rounded-xl shadow-lg shadow-blue-200 mb-4 flex items-center justify-center text-white font-bold">
-            U
-          </div>
+<div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white">
+               <Sparkles size={12} fill="currentColor" />
+             </div>
 
           {/* Nav Items */}
           <nav className="flex flex-col gap-y-6 text-gray-400">

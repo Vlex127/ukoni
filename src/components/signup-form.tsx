@@ -14,7 +14,6 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-
 export function SignupForm({
   className,
   ...props

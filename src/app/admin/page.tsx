@@ -14,8 +14,46 @@ import {
   Sparkles,
 } from "lucide-react";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  picture: string | null;
+  emailVerified: boolean;
+}
 
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        // Get session token from localStorage
+        const sessionToken = localStorage.getItem('session_token');
+        if (!sessionToken) {
+          return;
+        }
+
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8 pb-10">
       
@@ -46,10 +84,15 @@ export default function Home() {
           </div>
           {/* User Avatar */}
           <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white shadow-sm overflow-hidden relative">
-             <a href="/admin/profile">
-             {/*get iamge from user db */}
-             <Image src="/avatar.jpg" alt="User" fill className="object-cover"/> 
-             </a>
+            <a href="/admin/profile">
+              {user?.picture ? (
+                <Image src={user.picture} alt="User" fill className="object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-lg">
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </div>
+              )}
+            </a>
           </div>
         </div>
       </header>
@@ -57,7 +100,7 @@ export default function Home() {
       {/* --- Welcome Section --- */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          Welcome Back! <span className="animate-pulse">👋</span>
+          Welcome {user?.name || 'Back'}! <span className="animate-pulse"> </span>
         </h1>
         <p className="text-gray-500 text-sm mt-1">Here is what's happening with your blog today.</p>
       </div>
@@ -76,8 +119,8 @@ export default function Home() {
             <div className="relative z-10">
               <div className="flex justify-between items-start">
                  <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Henry Qells</h2>
-                    <p className="text-blue-100 text-sm font-medium opacity-90">Writer & Editor</p>
+                    <h2 className="text-2xl font-bold tracking-tight">{user?.name || 'User'}</h2>
+                    <p className="text-blue-100 text-sm font-medium opacity-90">{user?.email || 'writer@example.com'}</p>
                  </div>
                  <button className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition">
                     <MoreHorizontal size={20} />

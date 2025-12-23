@@ -45,6 +45,8 @@ export function SignupForm({
       const data = await response.json()
 
       if (response.ok) {
+        // Store session token
+        localStorage.setItem('session_token', data.sessionToken);
         router.push("/admin")
       } else {
         setError(data.error || "Failed to create account")

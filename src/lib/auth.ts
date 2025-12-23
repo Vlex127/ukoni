@@ -14,13 +14,23 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
+// Helper function to get Gmail profile picture
+export function getGmailProfilePicture(email: string): string {
+  // Convert email to lowercase and remove spaces
+  const cleanEmail = email.toLowerCase().trim();
+  // Use Google's profile picture API
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanEmail)}&background=random&size=128`;
+}
+
 export async function createUser(email: string, password: string, name?: string) {
   const hashedPassword = await hashPassword(password);
+  const profilePicture = getGmailProfilePicture(email);
   
   const newUser = await db.insert(users).values({
     email,
     password: hashedPassword,
     name,
+    picture: profilePicture,
     emailVerified: false
   }).returning();
   

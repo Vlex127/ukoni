@@ -15,6 +15,27 @@
       "when": 1766452766243,
       "tag": "0001_chilly_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766454022029,
+      "tag": "0002_wonderful_makkari",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766457257169,
+      "tag": "0003_flaky_lionheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766458800824,
+      "tag": "0004_giant_ted_forrester",
+      "breakpoints": true
     }
   ]
 }

@@ -60,6 +60,38 @@ const CATEGORIES = ["All", "Design", "Development", "Productivity", "Lifestyle",
 
 export default function BlogHome() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [subscribeMessage, setSubscribeMessage] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubscribing(true);
+    setSubscribeMessage('');
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubscribeMessage('Successfully subscribed!');
+        setEmail('');
+      } else {
+        setSubscribeMessage(data.error || 'Failed to subscribe');
+      }
+    } catch (error) {
+      setSubscribeMessage('Failed to subscribe');
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-blue-100">
@@ -124,16 +156,29 @@ export default function BlogHome() {
           </p>
           
           {/* Responsive Hero Form */}
-          <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md sm:max-w-none mx-auto">
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md sm:max-w-none mx-auto">
             <input 
               type="email" 
               placeholder="Enter your email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-80 shadow-sm"
+              required
             />
-            <button className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 w-full sm:w-auto whitespace-nowrap">
-              Subscribe
+            <button 
+              type="submit"
+              disabled={isSubscribing}
+              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 w-full sm:w-auto whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubscribing ? 'Subscribing...' : 'Subscribe'}
             </button>
-          </div>
+          </form>
+          
+          {subscribeMessage && (
+            <div className={`mt-4 text-center text-sm ${subscribeMessage.includes('Successfully') ? 'text-green-600' : 'text-red-600'}`}>
+              {subscribeMessage}
+            </div>
+          )}
         </section>
 
         {/* --- Featured Post --- */}

@@ -2,7 +2,8 @@
 
 import { GalleryVerticalEnd, Sparkles } from "lucide-react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -34,27 +35,21 @@ export function LoginForm({
     const password = formData.get("password") as string
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store session token
-        localStorage.setItem('session_token', data.sessionToken);
-        router.push("/admin")
+      if (result?.error) {
+        setError("Invalid credentials. Please try again.");
       } else {
-        setError(data.error || "Failed to login")
+        router.push("/admin");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      setError("An unexpected error occurred. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
   return (

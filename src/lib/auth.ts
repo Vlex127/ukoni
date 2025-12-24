@@ -1,21 +1,12 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { db, users } from './db';
+import { db } from './db';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { users } from './db/schema';
 
 if (!process.env.AUTH_SECRET) {
   throw new Error('Missing required environment variable: AUTH_SECRET');
-}
-
-// Helper functions that will be used in the CredentialsProvider
-async function getUserByEmail(email: string) {
-  const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return user[0] || null;
-}
-
-async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -31,17 +22,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const user = await getUserByEmail(credentials.email as string);
+        const user = await db.select().from(users).where(eq(users.email, credentials.email as string)).limit(1);
 
-        if (!user || !user.password) {
+        if (!user[0] || !user[0].password) {
           return null;
         }
 
-        const isValid = await verifyPassword(credentials.password as string, user.password);
+        const isValid = await bcrypt.compare(credentials.password as string, user[0].password);
 
         if (isValid) {
-          // Return user object without the password
-          const { password, ...userWithoutPassword } = user;
+          const { password, ...userWithoutPassword } = user[0];
           return userWithoutPassword;
         }
         

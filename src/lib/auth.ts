@@ -4,6 +4,10 @@ import { db, users } from './db';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
+if (!process.env.AUTH_SECRET) {
+  throw new Error('Missing required environment variable: AUTH_SECRET');
+}
+
 // Helper functions that will be used in the CredentialsProvider
 async function getUserByEmail(email: string) {
   const user = await db.select().from(users).where(eq(users.email, email)).limit(1);

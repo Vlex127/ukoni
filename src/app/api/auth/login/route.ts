@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail, verifyPassword, createSession } from '@/lib/auth';
+import { signIn } from '@/lib/auth';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -12,40 +12,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = loginSchema.parse(body);
 
-    // Get user by email
-    const user = await getUserByEmail(email);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
+    await signIn('credentials', { email, password, redirect: false });
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password);
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Create session
-    const session = await createSession(user.id);
-
-    return NextResponse.json(
-      { 
-        message: 'Login successful',
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          emailVerified: user.emailVerified
-        },
-        sessionToken: session.token
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Login successful' }, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

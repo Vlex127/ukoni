@@ -1,29 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 
 export async function PUT(request: NextRequest) {
   try {
-    // Get session token from Authorization header or cookies
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '') || 
-                  request.cookies.get('session_token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'No session token provided' },
-        { status: 401 }
-      );
-    }
-
-    // Validate session
-    const sessionData = await validateSession(token);
-    if (!sessionData) {
-      return NextResponse.json(
-        { error: 'Invalid or expired session' },
-        { status: 401 }
-      );
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     // Get update data from request body
@@ -34,17 +18,17 @@ export async function PUT(request: NextRequest) {
     const updatedUser = await db
       .update(users)
       .set({
-        name: name || sessionData.user.name,
-        about: about || sessionData.user.about,
-        phone: phone || sessionData.user.phone,
-        location: location || sessionData.user.location,
-        website: website || sessionData.user.website,
-        twitter: twitter || sessionData.user.twitter,
-        linkedin: linkedin || sessionData.user.linkedin,
-        facebook: facebook || sessionData.user.facebook,
+        name,
+        about,
+        phone,
+        location,
+        website,
+        twitter,
+        linkedin,
+        facebook,
         updatedAt: new Date()
       })
-      .where(eq(users.id, sessionData.user.id))
+      .where(eq(users.id, session.user.id))
       .returning();
 
     return NextResponse.json({

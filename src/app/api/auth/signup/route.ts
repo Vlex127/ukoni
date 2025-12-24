@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signUpUser } from '@/lib/auth';
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 const signupSchema = z.object({
@@ -13,14 +15,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password, name } = signupSchema.parse(body);
 
-    // Create user using custom Neon auth
-    const response = await signUpUser(email, password, name);
+    // Check if user already exists
+    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existingUser.length > 0) {
+      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+    }
+
+    // Hash password and create new user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await db.insert(users).values({
+      email,
+      password: hashedPassword,
+      name: name || email.split('@')[0],
+    }).returning();
 
     return NextResponse.json(
       { 
         message: 'Account created successfully', 
-        user: response.user,
-        sessionToken: response.session.token
+        user: {
+          id: newUser[0].id,
+          email: newUser[0].email,
+          name: newUser[0].name,
+        }
       },
       { status: 201 }
     );

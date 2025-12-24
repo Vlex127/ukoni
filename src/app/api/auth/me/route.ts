@@ -1,45 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth';
+import { auth } from '@/lib/auth';
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session token from Authorization header or cookies
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '') || 
-                  request.cookies.get('session_token')?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'No session token provided' },
-        { status: 401 }
-      );
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Validate session
-    const sessionData = await validateSession(token);
-    if (!sessionData) {
-      return NextResponse.json(
-        { error: 'Invalid or expired session' },
-        { status: 401 }
-      );
+    // Fetch the full user profile from the database
+    const userProfile = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+
+    if (userProfile.length === 0) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      user: {
-        id: sessionData.user.id,
-        email: sessionData.user.email,
-        name: sessionData.user.name,
-        picture: sessionData.user.picture,
-        emailVerified: sessionData.user.emailVerified,
-        about: sessionData.user.about,
-        phone: sessionData.user.phone,
-        location: sessionData.user.location,
-        website: sessionData.user.website,
-        twitter: sessionData.user.twitter,
-        linkedin: sessionData.user.linkedin,
-        facebook: sessionData.user.facebook
-      }
-    });
+    const { password, ...user } = userProfile[0];
+
+    return NextResponse.json({ user });
   } catch (error) {
     console.error('Get user error:', error);
     return NextResponse.json(

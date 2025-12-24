@@ -1,15 +1,17 @@
-import NextAuth from 'next-auth';
+import NextAuth, { type AuthOptions, getServerSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { users } from './db/schema';
+import { type JWT } from 'next-auth/jwt';
+import { type Session } from 'next-auth';
 
 if (!process.env.AUTH_SECRET) {
   throw new Error('Missing required environment variable: AUTH_SECRET');
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -43,13 +45,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user: any }) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.id = token.id as string;
       }
@@ -57,7 +59,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as const,
   },
   secret: process.env.AUTH_SECRET,
-});
+};
+
+export const { signIn, signOut } = NextAuth(authOptions);
+export const auth = () => getServerSession(authOptions);
+export { authOptions };

@@ -30,7 +30,6 @@ interface CampaignData {
   content: string;
   audience: 'all' | 'subscribers' | 'paid' | 'custom';
   customRecipients?: string[];
-  scheduledAt?: Date;
 }
 
 export async function sendEmail(data: EmailData) {
@@ -166,27 +165,6 @@ async function getPaidSubscribers(): Promise<string[]> {
   return [];
 }
 
-// Schedule campaign for later
-export async function scheduleCampaign(campaignData: CampaignData, scheduledAt: Date) {
-  try {
-    // Store campaign in database with scheduled time
-    // TODO: Implement database storage for scheduled campaigns
-    
-    console.log(`Campaign scheduled for: ${scheduledAt.toISOString()}`);
-    
-    // You would typically use a cron job or scheduled task service
-    // to actually send the campaign at the scheduled time
-    
-    return {
-      success: true,
-      scheduledAt,
-      campaignId: `scheduled_${Date.now()}`,
-    };
-  } catch (error) {
-    console.error('Campaign scheduling error:', error);
-    throw error;
-  }
-}
 
 // Save campaign as draft
 export async function saveDraft(campaignData: Partial<CampaignData>) {

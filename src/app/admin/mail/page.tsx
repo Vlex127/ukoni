@@ -32,10 +32,9 @@ type Campaign = {
   id: number | string;
   subject: string;
   content: string;
-  status: 'draft' | 'sent' | 'scheduled';
+  status: 'draft' | 'sent';
   createdAt: string;
   audience?: string;
-  scheduledAt?: string;
   stats?: {
     open: string;
     click: string;
@@ -181,23 +180,12 @@ export default function MailPage() {
 
         {/* Controls */}
         <div className="p-4 space-y-4 shrink-0">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <button 
               onClick={() => { setSelectedMail(null); setIsComposing(true); }}
               className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-sm font-semibold transition shadow-md shadow-indigo-100"
             >
               <Plus size={16} /> <span className="hidden sm:inline">New Email</span><span className="sm:hidden">New</span>
-            </button>
-            <button 
-              onClick={async () => {
-                  try {
-                    await fetch('/api/admin/trigger-scheduled', { method: 'POST' });
-                    fetchData();
-                  } catch (e) {}
-              }}
-              className="flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 rounded-lg text-sm font-medium transition"
-            >
-              <CalendarIcon size={16} /> <span className="hidden sm:inline">Sync Schedule</span><span className="sm:hidden">Sync</span>
             </button>
           </div>
 
@@ -213,7 +201,7 @@ export default function MailPage() {
           </div>
 
           <div className="bg-slate-100 p-1 rounded-lg flex text-xs font-semibold overflow-x-auto no-scrollbar">
-            {["All", "Drafts", "Sent", "Scheduled"].map((tab) => (
+            {["All", "Drafts", "Sent"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -238,7 +226,7 @@ export default function MailPage() {
              </div>
           ) : filteredCampaigns.length === 0 ? (
              <div className="text-center py-10 px-6">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-16 h-16 lg:w-32 lg:h-32 bg-slate-50 rounded-full flex items-center justify-center shadow-xl shadow-slate-100 mb-3">
                   <Search size={24} className="text-slate-300" />
                 </div>
                 <p className="text-sm font-medium text-slate-900">No emails found</p>
@@ -302,7 +290,6 @@ export default function MailPage() {
 function StatusDot({ status }: { status?: string }) {
   const color = 
     status === 'sent' ? 'bg-emerald-500' : 
-    status === 'scheduled' ? 'bg-amber-500' : 
     'bg-slate-300';
     
   return <div className={`w-2 h-2 rounded-full ${color}`} />;
@@ -353,7 +340,6 @@ function DetailView({ mail, onBack, onEditDraft, onDeleteDraft }: {
                <div className="flex items-center gap-2">
                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     mail.status === 'sent' ? 'bg-emerald-100 text-emerald-700' :
-                    mail.status === 'scheduled' ? 'bg-amber-100 text-amber-700' :
                     'bg-slate-100 text-slate-600'
                  }`}>
                     {mail.status || 'Draft'}
@@ -455,7 +441,6 @@ function ComposeView({ onCancel, subscriberData, refreshCampaigns, editingDraft 
    const [audience, setAudience] = useState(editingDraft?.audience || 'all');
    const [statusMsg, setStatusMsg] = useState('');
    const [isProcessing, setIsProcessing] = useState(false);
-   const [scheduledTime, setScheduledTime] = useState('');
    
    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -484,7 +469,7 @@ function ComposeView({ onCancel, subscriberData, refreshCampaigns, editingDraft 
       }, 0);
    };
 
-   const handleSubmit = async (action: 'draft' | 'send' | 'schedule') => {
+   const handleSubmit = async (action: 'draft' | 'send') => {
       if (!subject && !content) {
          setStatusMsg('Please add content.');
          return;
@@ -497,8 +482,7 @@ function ComposeView({ onCancel, subscriberData, refreshCampaigns, editingDraft 
          subject,
          content,
          audience,
-         status: action === 'send' ? 'sent' : action === 'schedule' ? 'scheduled' : 'draft',
-         scheduledAt: action === 'schedule' ? scheduledTime : undefined
+         status: action === 'send' ? 'sent' : 'draft',
       };
 
       try {
@@ -624,32 +608,13 @@ function ComposeView({ onCancel, subscriberData, refreshCampaigns, editingDraft 
                   Save Draft
                </button>
 
-               <div className="flex items-center gap-1">
-                 {/* Mobile condensed date input */}
-                 <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                     <input
-                        type="datetime-local"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                        className="bg-transparent border-none text-[10px] lg:text-xs text-slate-600 py-1 px-1 lg:px-2 w-28 lg:w-36 focus:ring-0"
-                     />
-                     <button 
-                        onClick={() => handleSubmit('schedule')}
-                        disabled={!scheduledTime || isProcessing}
-                        className="p-1.5 text-amber-600 hover:bg-white rounded-md transition shadow-sm disabled:opacity-50 disabled:shadow-none"
-                     >
-                        <CalendarIcon size={16} />
-                     </button>
-                 </div>
-
-                 <button 
+               <button 
                     onClick={() => handleSubmit('send')}
                     disabled={isProcessing}
                     className="px-4 lg:px-6 py-2 bg-indigo-600 text-white text-xs lg:text-sm font-bold rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 shadow-lg shadow-indigo-200 disabled:opacity-70"
                  >
                     <Send size={14} className="lg:w-4 lg:h-4" /> <span className="hidden sm:inline">Send</span>
                  </button>
-               </div>
             </div>
          </div>
       </div>

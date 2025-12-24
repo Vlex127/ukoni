@@ -21,7 +21,7 @@ export async function GET() {
 // POST - Save new email
 export async function POST(request: NextRequest) {
   try {
-    const { subject, content, audience, status, scheduledAt } = await request.json();
+    const { subject, content, audience, status } = await request.json();
 
     if (!subject || !content) {
       return NextResponse.json({ error: 'Subject and content are required' }, { status: 400 });
@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
         subject,
         content,
         audience: audience || 'all',
-        status: status || 'draft',
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        status: status || 'draft'
       })
       .returning();
 
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
 // PUT - Update existing email
 export async function PUT(request: NextRequest) {
   try {
-    const { id, subject, content, audience, status, scheduledAt, stats } = await request.json();
+    const { id, subject, content, audience, status, stats } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Email ID is required' }, { status: 400 });
@@ -67,7 +66,6 @@ export async function PUT(request: NextRequest) {
         updateData.sentAt = new Date();
       }
     }
-    if (scheduledAt !== undefined) updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     if (stats !== undefined) updateData.stats = stats;
 
     const updatedEmail = await db

@@ -128,10 +128,10 @@ export default function AboutPage() {
       <section className="py-24 text-center">
          <h2 className="text-3xl font-bold text-gray-900 mb-6">Ready to share your story?</h2>
          <div className="flex justify-center gap-4">
-            <Link href="/register" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+            <Link href="/signup" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-200">
                Get Started
             </Link>
-            <Link href="/blog" className="px-8 py-3 bg-white text-gray-900 font-bold border border-gray-200 rounded-full hover:bg-gray-50 transition">
+            <Link href="/articles" className="px-8 py-3 bg-white text-gray-900 font-bold border border-gray-200 rounded-full hover:bg-gray-50 transition">
                Read Blogs
             </Link>
          </div>

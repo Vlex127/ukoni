@@ -51,8 +51,7 @@ export const emails = pgTable('emails', {
   subject: text('subject').notNull(),
   content: text('content').notNull(),
   audience: text('audience').notNull().default('all'),
-  status: text('status').notNull().default('draft'), // draft, scheduled, sent
-  scheduledAt: timestamp('scheduled_at'),
+  status: text('status').notNull().default('draft'), // draft, sent
   sentAt: timestamp('sent_at'),
   stats: json('stats'), // { sent: number, failed: number, open: number, click: number }
   createdAt: timestamp('created_at').defaultNow(),

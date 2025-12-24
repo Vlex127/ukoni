@@ -27,7 +27,7 @@ interface User {
 }
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const session = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,11 +36,11 @@ export default function Home() {
       try {
         setIsLoading(true);
         
-        if (status === "loading") {
+        if (session.status === "loading") {
           return;
         }
         
-        if (!session?.user?.id) {
+        if (!session.data?.user?.id) {
           console.log("No session found");
           setIsLoading(false);
           return;
@@ -48,7 +48,7 @@ export default function Home() {
 
         const response = await fetch("/api/auth/me", {
           headers: {
-            Authorization: `Bearer ${session.user.id}`, // NextAuth uses user ID in session
+            Authorization: `Bearer ${session.data.user.id}`, // NextAuth uses user ID in session
           },
         });
 
@@ -67,7 +67,7 @@ export default function Home() {
     };
 
     fetchUser();
-  }, [session, status]);
+  }, [session]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">

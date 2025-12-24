@@ -35,6 +35,8 @@ export default function Home() {
         setIsLoading(true);
         const sessionToken = localStorage.getItem("session_token");
         if (!sessionToken) {
+          console.log("No session token found");
+          setIsLoading(false);
           return;
         }
 
@@ -46,7 +48,10 @@ export default function Home() {
 
         if (response.ok) {
           const data = await response.json();
+          console.log("User data:", data);
           setUser(data.user);
+        } else {
+          console.error("Failed to fetch user:", response.status, response.statusText);
         }
       } catch (error) {
         console.error("Error fetching user:", error);

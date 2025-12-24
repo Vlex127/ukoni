@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Spinner } from "@/components/ui/spinner";
 
 interface User {
@@ -26,6 +27,7 @@ interface User {
 }
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,16 +35,20 @@ export default function Home() {
     const fetchUser = async () => {
       try {
         setIsLoading(true);
-        const sessionToken = localStorage.getItem("session_token");
-        if (!sessionToken) {
-          console.log("No session token found");
+        
+        if (status === "loading") {
+          return;
+        }
+        
+        if (!session?.user?.id) {
+          console.log("No session found");
           setIsLoading(false);
           return;
         }
 
         const response = await fetch("/api/auth/me", {
           headers: {
-            Authorization: `Bearer ${sessionToken}`,
+            Authorization: `Bearer ${session.user.id}`, // NextAuth uses user ID in session
           },
         });
 
@@ -61,7 +67,7 @@ export default function Home() {
     };
 
     fetchUser();
-  }, []);
+  }, [session, status]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">

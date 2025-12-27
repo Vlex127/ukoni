@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     ALGORITHM: str = "HS256"
     
-    # Database - Neon PostgreSQL
+    # Database - SQLite for local development
     DATABASE_URL: Optional[str] = None
     NEON_DATABASE_URL: Optional[str] = None  # Neon connection string
     POSTGRES_SERVER: str = "localhost"
@@ -21,12 +21,15 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "ukoni"
     POSTGRES_PORT: int = 5432
+    USE_SQLITE: bool = True  # Use SQLite for local development
     
     # CORS
     ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     
     @property
     def database_url(self) -> str:
+        if self.USE_SQLITE:
+            return "sqlite:///./ukoni.db"
         if self.NEON_DATABASE_URL:
             return self.NEON_DATABASE_URL
         if self.DATABASE_URL:

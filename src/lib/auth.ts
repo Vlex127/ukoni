@@ -48,12 +48,14 @@ const authOptions: AuthOptions = {
     async jwt({ token, user }: { token: JWT; user: any }) {
       if (user) {
         token.id = user.id;
+        token.admin = user.admin;
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.admin = token.admin as boolean;
       }
       return session;
     },

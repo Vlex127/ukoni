@@ -24,6 +24,7 @@ async function getUserById(userId: string) {
       name: users.name,
       picture: users.picture,
       emailVerified: users.emailVerified,
+      admin: users.admin,
       about: users.about,
       phone: users.phone,
       location: users.location,

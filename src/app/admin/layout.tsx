@@ -2,7 +2,7 @@
 
 import { Inter } from "next/font/google";
 import "../globals.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Briefcase,
   Calendar,
@@ -16,6 +16,9 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 // Ensure you have this component, or use a simple placeholder if testing
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
@@ -26,11 +29,64 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session) {
+      router.push("/login");
+      return;
+    }
+
+    // Fetch user admin status for additional client-side validation
+    const fetchUserAdmin = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const data = await response.json();
+          setIsAdmin(data.user?.admin || false);
+          
+          // Double-check admin authorization
+          if (!data.user?.admin) {
+            router.push("/unauthorized");
+          }
+        } else {
+          console.error("Failed to fetch user admin status");
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Error fetching user admin status:", error);
+        router.push("/login");
+      }
+    };
+
+    fetchUserAdmin();
+  }, [session, status, router]);
 
   // Toggle function
   const toggleCalendar = () => setIsCalendarOpen(!isCalendarOpen);
+
+  if (status === "loading") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Spinner className="size-8" />
+        <p className="text-gray-500 text-sm">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  if (isAdmin === false) {
+    return null; // Will redirect to unauthorized in useEffect
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">

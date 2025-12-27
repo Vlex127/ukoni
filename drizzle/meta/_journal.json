@@ -36,6 +36,20 @@
       "when": 1766458800824,
       "tag": "0004_giant_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766822439918,
+      "tag": "0005_wise_jimmy_woo",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766823067501,
+      "tag": "0006_furry_leader",
+      "breakpoints": true
     }
   ]
 }

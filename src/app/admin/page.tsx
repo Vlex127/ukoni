@@ -17,6 +17,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
@@ -24,12 +25,29 @@ interface User {
   name: string | null;
   picture: string | null;
   emailVerified: boolean;
+  admin: boolean;
+}
+
+interface Stats {
+  totalPosts: number;
+  totalPages: number;
+  totalComments: number;
+  totalViews: number;
+  totalLikes: number;
 }
 
 export default function Home() {
   const session = useSession();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<Stats>({
+    totalPosts: 0,
+    totalPages: 0,
+    totalComments: 0,
+    totalViews: 0,
+    totalLikes: 0,
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,8 +59,9 @@ export default function Home() {
         }
         
         if (!session.data?.user?.id) {
-          console.log("No session found");
+          console.log("No session found - redirecting to login");
           setIsLoading(false);
+          router.push("/login");
           return;
         }
 
@@ -66,7 +85,20 @@ export default function Home() {
       }
     };
 
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/admin/stats");
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
     fetchUser();
+    fetchStats();
   }, [session]);
 
   return (
@@ -160,15 +192,15 @@ export default function Home() {
 
                   <div className="flex gap-8 mt-12">
                     <div>
-                      <span className="text-3xl font-bold block">32</span>
+                      <span className="text-3xl font-bold block">{stats.totalPosts}</span>
                       <span className="text-blue-100 text-xs uppercase tracking-wider opacity-80">
                         Posts
                       </span>
                     </div>
                     <div>
-                      <span className="text-3xl font-bold block">23K</span>
+                      <span className="text-3xl font-bold block">{stats.totalViews.toLocaleString()}</span>
                       <span className="text-blue-100 text-xs uppercase tracking-wider opacity-80">
-                        Subs
+                        Views
                       </span>
                     </div>
                   </div>
@@ -194,7 +226,7 @@ export default function Home() {
                   <span className="text-gray-400 text-sm font-medium block mb-1">
                     Total Post
                   </span>
-                  <span className="text-2xl font-bold text-gray-800">154</span>
+                  <span className="text-2xl font-bold text-gray-800">{stats.totalPosts}</span>
                 </div>
               </div>
 
@@ -207,7 +239,7 @@ export default function Home() {
                   <span className="text-gray-400 text-sm font-medium block mb-1">
                     Total Pages
                   </span>
-                  <span className="text-2xl font-bold text-gray-800">56</span>
+                  <span className="text-2xl font-bold text-gray-800">{stats.totalPages}</span>
                 </div>
               </div>
 
@@ -220,14 +252,14 @@ export default function Home() {
                   <span className="text-gray-400 text-sm font-medium block mb-1">
                     Comments
                   </span>
-                  <span className="text-2xl font-bold text-gray-800">34.2K</span>
+                  <span className="text-2xl font-bold text-gray-800">{stats.totalComments.toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Card 4 (Pop-out style) */}
               <div className="relative bg-white rounded-3xl p-6 flex flex-col justify-end shadow-xl shadow-gray-100 transform xl:-translate-y-4 border border-gray-50">
                 <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-md z-10">
-                  <Heart size={12} fill="currentColor" /> +1K
+                  <Heart size={12} fill="currentColor" /> +{stats.totalLikes > 0 ? Math.floor(stats.totalLikes / 1000) : 0}K
                 </div>
                 <div className="w-12 h-12 mb-4 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
                   <Heart size={22} />
@@ -236,7 +268,7 @@ export default function Home() {
                   <span className="text-gray-400 text-sm font-medium block mb-1">
                     Total Likes
                   </span>
-                  <span className="text-2xl font-bold text-gray-800">65.2K</span>
+                  <span className="text-2xl font-bold text-gray-800">{stats.totalLikes.toLocaleString()}</span>
                 </div>
               </div>
             </div>

@@ -3,6 +3,26 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, User, MessageCircle } from 'lucide-react';
 
+// Define post type
+type Post = {
+  id: number;
+  title: string;
+  content: string;
+  excerpt: string;
+  author: string;
+  date: string;
+  readTime: string;
+  slug: string;
+};
+
+// Define comment type
+type Comment = {
+  id: number;
+  author: string;
+  content: string;
+  date: string;
+};
+
 // Generate static params for all published posts
 export async function generateStaticParams() {
   // Return empty array for now - will be populated when database is set up
@@ -10,13 +30,13 @@ export async function generateStaticParams() {
 }
 
 // Fetch post data
-async function getPost(slug: string) {
+async function getPost(slug: string): Promise<Post | null> {
   // Return null for now - will fetch from database when set up
   return null;
 }
 
 // Fetch comments for the post
-async function getComments(postId: number) {
+async function getComments(postId: number): Promise<Comment[]> {
   // Return empty array for now - will fetch from database when set up
   return [];
 }
@@ -24,7 +44,7 @@ async function getComments(postId: number) {
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPost(slug);
-  const comments = await getComments(post?.id || 0);
+  const comments = await getComments(post?.id ?? 0);
 
   if (!post) {
     notFound();
@@ -141,7 +161,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">
-                          {comment.author?.name || 'Anonymous'}
+                          {comment.author || 'Anonymous'}
                         </p>
                         <p className="text-sm text-gray-500">
                           {new Date().toLocaleDateString('en-US', {
@@ -154,7 +174,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     </div>
                   </div>
                   <p className="text-gray-700 leading-relaxed">
-                    {comment.body}
+                    {comment.content}
                   </p>
                 </div>
               ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Github,
   Linkedin,
@@ -12,49 +12,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Mock Data for Blog Posts
-const FEATURED_POST = {
-  category: "Design",
-  title: "The Evolution of 3D Interfaces in Modern Web Design",
-  excerpt: "How depth, shadows, and 3D elements are reshaping the flat design era into something more tangible.",
-  author: "Henry Qells",
-  date: "Oct 29, 2024",
-  readTime: "5 min read",
-  imageColor: "bg-blue-100", 
+// Post type definition
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  author: string;
+  date: string;
+  readTime: string;
+  category: string;
+  color: string;
+  thumbnailUrl?: string;
 };
-
-const LATEST_POSTS = [
-  {
-    id: 1,
-    category: "Development",
-    title: "Why Next.js 14 is a Game Changer for Server Actions",
-    excerpt: "Exploring the new mental model of handling data mutations directly from your components.",
-    author: "Sarah Jenks",
-    date: "Oct 28, 2024",
-    readTime: "8 min read",
-    color: "bg-purple-100",
-  },
-  {
-    id: 2,
-    category: "Productivity",
-    title: "Setting Intentions Instead of Resolutions",
-    excerpt: "A sustainable approach to personal growth that focuses on 'why' rather than just 'what'.",
-    author: "Mike Ross",
-    date: "Oct 25, 2024",
-    readTime: "4 min read",
-    color: "bg-teal-100",
-  },
-  {
-    id: 3,
-    category: "Lifestyle",
-    title: "Minimalism: A Developer's Guide to Digital Decluttering",
-    excerpt: "Cleaning up your digital workspace can lead to a clearer mind and better code.",
-    author: "Henry Qells",
-    date: "Oct 22, 2024",
-    readTime: "6 min read",
-    color: "bg-orange-100",
-  },
-];
 
 const CATEGORIES = ["All", "Design", "Development", "Productivity", "Lifestyle", "Business"];
 
@@ -63,6 +33,31 @@ export default function BlogHome() {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [subscribeMessage, setSubscribeMessage] = useState('');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch posts on component mount
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const response = await fetch('/api/posts');
+      if (response.ok) {
+        const postsData = await response.json();
+        setPosts(postsData);
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get featured post (first post) and latest posts (rest)
+  const featuredPost = posts[0];
+  const latestPosts = posts.slice(1);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,35 +177,55 @@ export default function BlogHome() {
         </section>
 
         {/* --- Featured Post --- */}
-        <section className="mb-20">
-          <div className="group relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-gray-50 rounded-3xl p-8 hover:bg-gray-100 transition duration-300">
-            {/* Image Placeholder */}
-            <div className={`aspect-video w-full ${FEATURED_POST.imageColor} rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition`}>
-               {/* <Image src="..." /> */}
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-sm">
-                <span className="font-semibold text-blue-600">{FEATURED_POST.category}</span>
-                <span className="text-gray-300">•</span>
-                <span className="text-gray-500">{FEATURED_POST.date}</span>
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition">
-                {FEATURED_POST.title}
-              </h2>
-              <p className="text-gray-600 leading-relaxed">
-                {FEATURED_POST.excerpt}
-              </p>
-              <div className="pt-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-300"></div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{FEATURED_POST.author}</p>
-                  <p className="text-xs text-gray-500">{FEATURED_POST.readTime}</p>
+        {loading ? (
+          <section className="mb-20">
+            <div className="animate-pulse">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-gray-50 rounded-3xl p-8">
+                <div className="aspect-video bg-gray-200 rounded-2xl"></div>
+                <div className="space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-8 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : featuredPost ? (
+          <section className="mb-20">
+            <div className="group relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-gray-50 rounded-3xl p-8 hover:bg-gray-100 transition duration-300">
+              {/* Image Placeholder */}
+              <div className={`aspect-video w-full ${featuredPost.color} rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition`}>
+                 {featuredPost.thumbnailUrl && (
+                   <img src={featuredPost.thumbnailUrl} alt={featuredPost.title} className="w-full h-full object-cover" />
+                 )}
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="font-semibold text-blue-600">{featuredPost.category}</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-gray-500">{featuredPost.date}</span>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition">
+                  <Link href={`/blog/${featuredPost.slug}`}>
+                    {featuredPost.title}
+                  </Link>
+                </h2>
+                <p className="text-gray-600 leading-relaxed">
+                  {featuredPost.excerpt}
+                </p>
+                <div className="pt-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{featuredPost.author}</p>
+                    <p className="text-xs text-gray-500">{featuredPost.readTime}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {/* --- Categories Filters --- */}
         <section className="flex flex-wrap gap-2 mb-12 border-b border-gray-100 pb-8">
@@ -230,37 +245,57 @@ export default function BlogHome() {
 
         {/* --- Latest Posts Grid --- */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
-          {LATEST_POSTS.map((post) => (
-            <article key={post.id} className="group flex flex-col gap-4">
-              {/* Card Image */}
-              <div className={`w-full aspect-[4/3] ${post.color} rounded-2xl overflow-hidden relative`}>
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition duration-300" />
+          {loading ? (
+            // Loading skeletons
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="flex flex-col gap-4">
+                  <div className="w-full aspect-[4/3] bg-gray-200 rounded-2xl"></div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-6 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
               </div>
+            ))
+          ) : (
+            latestPosts.map((post) => (
+              <article key={post.id} className="group flex flex-col gap-4">
+                {/* Card Image */}
+                <div className={`w-full aspect-[4/3] ${post.color} rounded-2xl overflow-hidden relative`}>
+                  {post.thumbnailUrl && (
+                    <img src={post.thumbnailUrl} alt={post.title} className="w-full h-full object-cover" />
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition duration-300" />
+                </div>
 
-              {/* Card Content */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-600">
-                  {post.category}
+                {/* Card Content */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-600">
+                    {post.category}
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 leading-snug group-hover:text-blue-600 transition">
+                    <Link href={`/blog/${post.slug}`}>
+                      {post.title}
+                    </Link>
+                  </h3>
+                  <p className="text-gray-500 text-sm line-clamp-2">
+                    {post.excerpt}
+                  </p>
+                  
+                  <div className="flex items-center justify-between mt-4 border-t border-gray-100 pt-4">
+                     <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                        <span className="text-xs font-medium text-gray-700">{post.author}</span>
+                     </div>
+                     <span className="text-xs text-gray-400">{post.readTime}</span>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 leading-snug group-hover:text-blue-600 transition">
-                  <Link href={`/blog/${post.id}`}>
-                    {post.title}
-                  </Link>
-                </h3>
-                <p className="text-gray-500 text-sm line-clamp-2">
-                  {post.excerpt}
-                </p>
-                
-                <div className="flex items-center justify-between mt-4 border-t border-gray-100 pt-4">
-                   <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gray-200"></div>
-                      <span className="text-xs font-medium text-gray-700">{post.author}</span>
-                   </div>
-                   <span className="text-xs text-gray-400">{post.readTime}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))
+          )}
         </section>
 
         {/* --- Newsletter / Footer CTA --- */}

@@ -87,13 +87,20 @@ export default function Home() {
 
     const fetchStats = async () => {
       try {
+        console.log('Fetching stats...');
         const response = await fetch("/api/admin/stats");
+        console.log('Stats response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Stats data received:', data);
           setStats(data);
+        } else {
+          const errorData = await response.json();
+          console.error('Stats API error:', errorData);
         }
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        console.error('Error fetching stats:', error);
       }
     };
 

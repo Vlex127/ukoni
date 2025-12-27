@@ -13,7 +13,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { login, error } = useAuth()
@@ -23,7 +23,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     setIsLoading(true)
 
     try {
-      await login(username, password)
+      await login(email, password)
       onSuccess?.()
     } catch (error) {
       console.error("Login failed:", error)
@@ -48,13 +48,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               required
               disabled={isLoading}
             />

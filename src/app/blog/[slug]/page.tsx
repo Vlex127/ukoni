@@ -1,111 +1,24 @@
 import { notFound } from 'next/navigation';
-import { db, posts, users, comments } from '@/lib/db';
-import { eq, sql, desc } from 'drizzle-orm';
+
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, User, MessageCircle } from 'lucide-react';
 
 // Generate static params for all published posts
 export async function generateStaticParams() {
-  try {
-    const postsData = await db
-      .select({ slug: posts.slug })
-      .from(posts)
-      .where(sql`${posts.postType} = 'post' AND ${posts.status} = 'published'`);
-
-    return postsData.map((post) => ({
-      slug: post.slug,
-    }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
+  // Return empty array for now - will be populated when database is set up
+  return [];
 }
 
 // Fetch post data
 async function getPost(slug: string) {
-  try {
-    // First get the post
-    const postData = await db
-      .select()
-      .from(posts)
-      .where(eq(posts.slug, slug))
-      .limit(1);
-
-    if (postData.length === 0) {
-      return null;
-    }
-
-    const post = postData[0];
-
-    // Then get author info separately if userId exists
-    let author = null;
-    if (post.userId) {
-      const authorData = await db
-        .select({ name: users.name, email: users.email })
-        .from(users)
-        .where(eq(users.id, post.userId))
-        .limit(1);
-      
-      if (authorData.length > 0) {
-        author = authorData[0];
-      }
-    }
-
-    return {
-      ...post,
-      author
-    };
-  } catch (error) {
-    console.error('Error fetching post:', error);
-    return null;
-  }
+  // Return null for now - will fetch from database when set up
+  return null;
 }
 
 // Fetch comments for the post
 async function getComments(postId: number) {
-  try {
-    // First get the comments
-    const commentsData = await db
-      .select()
-      .from(comments)
-      .where(eq(comments.postId, postId))
-      .orderBy(desc(comments.createdAt));
-
-    // Filter comments - show all for now (you can change this to 'approved' only)
-    const filteredComments = commentsData.filter(comment => 
-      comment.status === 'approved' || comment.status === 'pending'
-    );
-
-    // Then get author info for each comment
-    const commentsWithAuthors = await Promise.all(
-      filteredComments.map(async (comment) => {
-        let author = null;
-        
-        // If comment has userId, get user info
-        if (comment.userId) {
-          const authorData = await db
-            .select({ name: users.name })
-            .from(users)
-            .where(eq(users.id, comment.userId))
-            .limit(1);
-          
-          if (authorData.length > 0) {
-            author = { name: authorData[0].name };
-          }
-        }
-
-        return {
-          ...comment,
-          author
-        };
-      })
-    );
-
-    return commentsWithAuthors;
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    return [];
-  }
+  // Return empty array for now - will fetch from database when set up
+  return [];
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -117,32 +30,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     notFound();
   }
 
-  // Increment view count
-  try {
-    await db
-      .update(posts)
-      .set({ 
-        viewsCount: sql`${posts.viewsCount} + 1`,
-        updatedAt: new Date()
-      })
-      .where(eq(posts.id, post.id));
-  } catch (error) {
-    console.error('Error updating view count:', error);
-  }
+  // Mock data for now
+  const mockPost = {
+    title: "Blog Post Coming Soon",
+    content: "This blog post is being prepared. The backend database is currently being set up.",
+    excerpt: "Stay tuned for amazing content!",
+    thumbnailUrl: null,
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    author: { name: "Admin" },
+    viewsCount: 0
+  };
 
-  const formattedDate = post.publishedAt 
-    ? new Date(post.publishedAt).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })
-    : new Date(post.createdAt).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
+  const formattedDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
-  const readTime = Math.max(1, Math.ceil((post.content?.length || 0) / 1000));
+  const readTime = 1;
 
   return (
     <div className="min-h-screen bg-white">
@@ -171,25 +77,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <main className="max-w-4xl mx-auto px-6 py-12">
         {/* Header */}
         <header className="mb-12">
-          <div className="mb-8">
-            {post.thumbnailUrl && (
-              <img 
-                src={post.thumbnailUrl} 
-                alt={post.title}
-                className="w-full h-64 md:h-96 object-cover rounded-2xl"
-              />
-            )}
-          </div>
-          
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-              {post.title}
+              {mockPost.title}
             </h1>
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <User size={16} />
-                <span>{post.author?.name || 'Anonymous'}</span>
+                <span>{mockPost.author?.name || 'Anonymous'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar size={16} />
@@ -205,9 +101,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               </div>
             </div>
             
-            {post.excerpt && (
+            {mockPost.excerpt && (
               <p className="text-xl text-gray-600 leading-relaxed border-l-4 border-blue-500 pl-4">
-                {post.excerpt}
+                {mockPost.excerpt}
               </p>
             )}
           </div>
@@ -215,12 +111,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         {/* Content */}
         <article className="prose prose-lg max-w-none">
-          <div 
-            className="text-gray-700 leading-relaxed space-y-4"
-            dangerouslySetInnerHTML={{ 
-              __html: post.content?.replace(/\n/g, '<br />') || '' 
-            }}
-          />
+          <div className="text-gray-700 leading-relaxed space-y-4">
+            <p>{mockPost.content}</p>
+            <p>The backend API with FastAPI and PostgreSQL (Neon) has been successfully set up. The database includes user authentication and management features.</p>
+            <p>Next steps:</p>
+            <ul>
+              <li>Set up blog post models in the database</li>
+              <li>Create API endpoints for blog content</li>
+              <li>Connect the frontend to the backend API</li>
+              <li>Implement comment functionality</li>
+            </ul>
+          </div>
         </article>
 
         {/* Comments Section */}
@@ -240,10 +141,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">
-                          {comment.author?.name || comment.guestName || 'Anonymous'}
+                          {comment.author?.name || 'Anonymous'}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                          {new Date().toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric'

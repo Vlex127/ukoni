@@ -12,7 +12,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  login: (username: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   register: (userData: RegisterData) => Promise<void>
   logout: () => void
   isLoading: boolean
@@ -20,7 +20,6 @@ interface AuthContextType {
 }
 
 interface RegisterData {
-  username: string
   email: string
   password: string
   full_name?: string
@@ -73,17 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const login = async (username: string, password: string) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true)
     setError(null)
 
     try {
       const formData = new FormData()
-      formData.append('username', username)
+      formData.append('username', email)  // Backend expects 'username' field but we pass email
       formData.append('password', password)
 
       console.log('Attempting login to:', 'http://localhost:8000/api/v1/auth/login')
-      console.log('Form data:', { username, password: '***' })
+      console.log('Form data:', { email, password: '***' })
 
       const response = await fetch('http://localhost:8000/api/v1/auth/login', {
         method: 'POST',
@@ -108,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('access_token', data.access_token)
       
       await fetchCurrentUser()
+      
+      // Redirect to admin page after successful login
+      window.location.href = '/admin'
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Network error occurred. Please check if the backend server is running.'
       console.error('Login error:', error)
@@ -140,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const newUser = await response.json()
       
-      await login(userData.username, userData.password)
+      await login(userData.email, userData.password)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Network error occurred. Please check if the backend server is running.'
       setError(errorMessage)

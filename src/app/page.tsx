@@ -9,11 +9,8 @@ import {
   Instagram,
   Menu,
   X,
-  User,
-  LogOut,
 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/contexts/auth-context";
 
 // Mock Data for Blog Posts
 const FEATURED_POST = {
@@ -62,7 +59,6 @@ const LATEST_POSTS = [
 const CATEGORIES = ["All", "Design", "Development", "Productivity", "Lifestyle", "Business"];
 
 export default function BlogHome() {
-  const { user, logout, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
@@ -125,42 +121,6 @@ export default function BlogHome() {
               <Search size={20} />
             </button>
 
-            {/* Auth Section */}
-            {!isLoading && (
-              <>
-                {user ? (
-                  <div className="flex items-center gap-2">
-                    <div className="hidden md:flex items-center gap-2 text-sm">
-                      <span className="text-gray-600">Welcome,</span>
-                      <span className="font-medium text-gray-900">{user.username}</span>
-                    </div>
-                    <button 
-                      onClick={logout}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-                    >
-                      <LogOut size={16} />
-                      <span className="hidden md:inline">Logout</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Link 
-                      href="/login"
-                      className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-                    >
-                      Login
-                    </Link>
-                    <Link 
-                      href="/signup"
-                      className="px-3 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition"
-                    >
-                      Sign up
-                    </Link>
-                  </div>
-                )}
-              </>
-            )}
-
             <button 
               className="md:hidden p-2 text-gray-900 hover:bg-gray-100 rounded-full transition"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -177,46 +137,6 @@ export default function BlogHome() {
             <Link href="/articles" className="text-lg font-medium text-gray-500 hover:text-blue-600" onClick={() => setIsMobileMenuOpen(false)}>Articles</Link>
             <Link href="/authors" className="text-lg font-medium text-gray-500 hover:text-blue-600" onClick={() => setIsMobileMenuOpen(false)}>Authors</Link>
             <Link href="/about" className="text-lg font-medium text-gray-500 hover:text-blue-600" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
-            
-            {/* Mobile Auth Section */}
-            {!isLoading && (
-              <div className="border-t border-gray-100 pt-6">
-                {user ? (
-                  <div className="flex flex-col gap-4">
-                    <div className="text-sm text-gray-600">
-                      Welcome, <span className="font-medium text-gray-900">{user.username}</span>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        logout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 text-lg font-medium text-gray-500 hover:text-blue-600"
-                    >
-                      <LogOut size={20} />
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    <Link 
-                      href="/login" 
-                      className="text-lg font-medium text-gray-500 hover:text-blue-600"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                    <Link 
-                      href="/signup" 
-                      className="text-lg font-medium text-blue-600 hover:text-blue-700"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign up
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
       </nav>

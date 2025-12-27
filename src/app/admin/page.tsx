@@ -171,12 +171,10 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-12 gap-8">
         {/* Profile Card (Span 4) */}
         <div className="col-span-4 bg-white rounded-[2rem] p-6 relative mt-12 border border-gray-50 shadow-sm">
-          {/* 3D Character Illustration Placeholder */}
+          {/* Profile Image */}
           <div className="absolute -top-24 right-4 w-48 h-52 overflow-visible">
-             {/* Replace with actual 3D image in public folder */}
-             <div className="w-full h-full bg-blue-100 rounded-xl flex items-end justify-center pb-4 text-xs text-blue-400">
-                3D Char Placeholder
-                {/* <Image src="/3d-character.png" alt="Character" fill className="object-contain" /> */}
+             <div className="w-full h-full relative">
+                <Image src="/profile1.jpg" alt="Profile" fill className="object-contain" />
              </div>
           </div>
 

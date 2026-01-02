@@ -47,12 +47,8 @@ export function PostForm({ post }: PostFormProps) {
   useEffect(() => {
     if (post?.featured_image_url) {
       setImagePreview(post.featured_image_url);
-    } else if (post?.featured_image) {
-      setImagePreview(
-        post.featured_image.startsWith('http')
-          ? post.featured_image
-          : getApiUrl(post.featured_image)
-      );
+    } else if (post?.featured_image && post.featured_image.startsWith('http')) {
+      setImagePreview(post.featured_image);
     }
   }, [post]);
 
@@ -108,6 +104,7 @@ export function PostForm({ post }: PostFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const url = post?.id
       ? getApiUrl(`api/v1/posts/${post.id}`)
@@ -250,13 +247,33 @@ export function PostForm({ post }: PostFormProps) {
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
             Category
           </label>
-          <input
-            type="text"
+          <select
             id="category"
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          />
+          >
+            <option value="">Select a category</option>
+            <option value="Design">Design</option>
+            <option value="Culture">Culture</option>
+            <option value="Technology">Technology</option>
+            <option value="Business">Business</option>
+            <option value="Lifestyle">Lifestyle</option>
+            <option value="Travel">Travel</option>
+            <option value="Food">Food</option>
+            <option value="Sports">Sports</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Education">Education</option>
+            <option value="Health">Health</option>
+            <option value="Science">Science</option>
+            <option value="Politics">Politics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Music">Music</option>
+            <option value="Art">Art</option>
+            <option value="Gaming">Gaming</option>
+            <option value="Photography">Photography</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
       </div>
 

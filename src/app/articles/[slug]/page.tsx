@@ -33,6 +33,7 @@ export type Post = {
   content: string;
   category: string;
   featured_image: string | null;
+  featured_image_url: string | null;
   author: Author;
   published_at: string;
   likes_count?: number; 
@@ -100,7 +101,7 @@ export default function ArticlePage() {
 
   if (!post) return notFound();
 
-  const imageUrl = post.featured_image ? getImageUrl(post.featured_image) : null;
+  const imageUrl = post.featured_image_url || (post.featured_image ? getImageUrl(post.featured_image) : null);
   const authorName = post.author?.full_name || 'Ukoni Author';
 
   return (

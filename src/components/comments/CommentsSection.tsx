@@ -99,7 +99,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const data = await apiClient<Comment[]>(`/api/v1/comments?post_id=${postId}`);
+        const data = await apiClient<Comment[]>(`/api/v1/comments?post_id=${postId}&include_replies=true`);
         setComments(data);
       } catch (error) {
         console.error('Error fetching comments:', error);
@@ -115,11 +115,11 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
     try {
       const newComment = await apiClient<Comment>('/api/v1/comments', {
         method: 'POST',
-        body: {
+        body: JSON.stringify({
           ...data,
           post_id: postId,
           parent_id: replyTo?.id || null,
-        },
+        }),
       });
       
       // Update logic...

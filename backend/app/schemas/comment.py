@@ -101,9 +101,18 @@ class CommentWithPost(CommentInDBBase):
     class Config:
         from_attributes = True
 
+class CommentWithPostAndReplies(CommentInDBBase):
+    """Schema for comment with post information and nested replies"""
+    post: Optional['Post'] = None
+    replies: List['CommentWithPostAndReplies'] = []
+
+    class Config:
+        from_attributes = True
+
 # Import Post model for relationship
 from app.schemas.post import Post
 
 # Update forward reference for nested models
 CommentWithReplies.update_forward_refs()
 CommentWithPost.update_forward_refs()
+CommentWithPostAndReplies.update_forward_refs()

@@ -15,6 +15,8 @@ interface Post {
   status: string;
   category: string | null;
   featured_image: string | null;
+  featured_image_url: string | null;
+  featured_image_public_id: string | null;
   meta_title: string | null;
   meta_description: string | null;
   is_featured: boolean;

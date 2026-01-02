@@ -31,6 +31,7 @@ interface Post {
   author_id: number;
   category: string | null;
   featured_image: string | null;
+  featured_image_url: string | null;
   meta_title: string | null;
   meta_description: string | null;
   view_count: number;
@@ -91,26 +92,55 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchVisitorData = async () => {
-  try {
-    const response = await fetch(getApiUrl('api/v1/analytics/visitors'));
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to fetch visitor data');
+    try {
+      const token = localStorage.getItem("access_token");
+      const headers = new Headers({
+        "Content-Type": "application/json",
+      });
+      
+      if (token) {
+        headers.append("Authorization", `Bearer ${token}`);
+      }
+      
+      // Use the working stats endpoint instead of the broken time series endpoint
+      const response = await fetch(getApiUrl('api/v1/analytics/visitors/stats'), { headers });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to fetch visitor data');
+      }
+      
+      const data = await response.json();
+      
+      // Transform stats data into the expected format for the chart
+      const today = new Date().toISOString().split('T')[0];
+      const currentPeriodData = [{
+        date: today,
+        count: data.current_period.total_visitors,
+        page_visitors: data.current_period.page_visitors,
+        comment_visitors: data.current_period.comment_visitors
+      }];
+      
+      const previousPeriodData = [{
+        date: today,
+        count: data.previous_period.total_visitors,
+        page_visitors: data.previous_period.page_visitors,
+        comment_visitors: data.previous_period.comment_visitors
+      }];
+      
+      setVisitorData({
+        currentPeriod: currentPeriodData,
+        previousPeriod: previousPeriodData
+      });
+    } catch (err) {
+      console.error('Error in fetchVisitorData:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      // Set empty data on error to prevent type issues
+      setVisitorData({ currentPeriod: [], previousPeriod: [] });
+    } finally {
+      setIsLoading(false);
     }
-    const data = await response.json();
-    setVisitorData({
-      currentPeriod: data.currentPeriod || [],
-      previousPeriod: data.previousPeriod || []
-    });
-  } catch (err) {
-    console.error('Error in fetchVisitorData:', err);
-    setError(err instanceof Error ? err.message : 'An error occurred');
-    // Set empty data on error to prevent type issues
-    setVisitorData({ currentPeriod: [], previousPeriod: [] });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
     fetchVisitorData();
   }, []);
@@ -441,6 +471,7 @@ export default function AdminDashboard() {
                     slug={post.slug}
                     status={post.status}
                     featured_image={post.featured_image}
+                    featured_image_url={post.featured_image_url}
                     created_at={post.created_at}
                   />
                 );
@@ -465,6 +496,7 @@ interface BlogItemProps {
   slug: string;
   status?: string;
   featured_image?: string | null;
+  featured_image_url?: string | null;
   created_at?: string;
 }
 
@@ -476,6 +508,7 @@ function BlogItem({
   slug,
   status,
   featured_image,
+  featured_image_url,
   created_at
 }: BlogItemProps) {
   const getStatusColor = (status?: string) => {
@@ -504,9 +537,11 @@ function BlogItem({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (featured_image) {
-      setImageUrl(getImageUrl(featured_image));
-      // Format the image URL properly
+    // Prioritize Cloudinary URL over local path
+    if (featured_image_url) {
+      setImageUrl(featured_image_url);
+    } else if (featured_image) {
+      // Fall back to local image logic
       let formattedUrl = featured_image;
       if (!featured_image.startsWith('http') && !featured_image.startsWith('blob:')) {
         // Remove any leading slashes to prevent double slashes
@@ -517,7 +552,7 @@ function BlogItem({
     } else {
       setImageUrl(null);
     }
-  }, [featured_image]);
+  }, [featured_image, featured_image_url]);
 
   return (
     <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">

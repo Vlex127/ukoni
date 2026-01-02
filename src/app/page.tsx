@@ -34,6 +34,8 @@ type Post = {
   excerpt: string;
   category: string;
   featured_image: string | null;
+  featured_image_url: string | null;
+  featured_image_public_id: string | null;
   author: Author;
   published_at: string;
   read_time: number | null;
@@ -238,7 +240,7 @@ export default function BlogHome() {
                   {post.featured_image && (
                      <div className="w-16 h-16 relative flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
                         <img 
-                          src={getImageUrl(post.featured_image)} 
+                          src={post.featured_image_url || getImageUrl(post.featured_image)} 
                           alt="" 
                           className="w-full h-full object-cover"
                         />
@@ -427,7 +429,7 @@ export default function BlogHome() {
                   {/* Image Side */}
                   <div className="md:col-span-7 h-64 md:h-[400px] relative overflow-hidden rounded-2xl">
                     <img 
-                      src={getImageUrl(featuredPost.featured_image)} 
+                      src={featuredPost.featured_image_url || getImageUrl(featuredPost.featured_image)} 
                       alt={featuredPost.title}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -510,7 +512,7 @@ export default function BlogHome() {
                     {/* Image */}
                     <Link href={`/articles/${post.slug}`} className="block overflow-hidden rounded-2xl mb-4 aspect-[4/3]">
                       <img 
-                        src={getImageUrl(post.featured_image)} 
+                        src={post.featured_image_url || getImageUrl(post.featured_image)} 
                         alt={post.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />

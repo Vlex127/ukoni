@@ -30,6 +30,8 @@ type Post = {
   content: string;
   category: string;
   featured_image: string | null;
+  featured_image_url: string | null;
+  featured_image_public_id: string | null;
   author: Author;
   published_at: string;
   read_time: number | null;
@@ -266,7 +268,7 @@ export default function ArticlesPage() {
                   className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3]"
                 >
                   <img 
-                    src={getImageUrl(post.featured_image)} 
+                    src={post.featured_image_url || getImageUrl(post.featured_image)} 
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

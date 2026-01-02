@@ -1,29 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Header, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Header, Query, Path, BackgroundTasks
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session, joinedload
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from app.db.database import get_db
 from app.models.comment import Comment as CommentModel
 from app.models.post import Post as PostModel
 from app.models.user import User
+from app.models.analytics import Analytics
 from app.schemas.comment import (
     Comment, CommentCreate, CommentUpdate, CommentWithReplies,
-    CommentStatus, CommentWithPost
+    CommentStatus, CommentWithPost, CommentWithPostAndReplies
 )
 from app.api.v1.endpoints.auth import get_current_user, get_current_user_optional
 from fastapi import BackgroundTasks
 from sqlalchemy import or_, func
 
-router = APIRouter(tags=["comments"])
+# Optional OAuth2 scheme that doesn't raise errors for missing tokens
+optional_oauth2 = OAuth2PasswordBearer(tokenUrl="auth/token", auto_error=False)
 
-# Rate limiting and spam prevention would be implemented here
-# You might want to add Redis or similar for production use
+router = APIRouter(tags=["comments"])
 
 def get_client_ip(request: Request) -> str:
     """Get client IP address from request"""
     if x_forwarded_for := request.headers.get('X-Forwarded-For'):
         return x_forwarded_for.split(',')[0]
     return request.client.host if request.client else "0.0.0.0"
+
+def get_current_user_truly_optional(
+    token: Optional[str] = Depends(optional_oauth2),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Truly optional user authentication - allows public access"""
+    if not token:
+        return None
+    try:
+        return get_current_user(token, db)
+    except:
+        return None
 
 @router.post("/", response_model=Comment, status_code=status.HTTP_201_CREATED)
 async def create_comment(
@@ -82,6 +96,16 @@ async def create_comment(
         db.commit()
         db.refresh(db_comment)
         
+        # Track this comment/reply as a new visitor
+        visitor_analytics = Analytics(
+            url=f"/posts/{comment.post_id}#comment-{db_comment.id}",
+            user_agent=user_agent or "Unknown",
+            ip_address=get_client_ip(request),
+            referrer=f"comment_{db_comment.id}"
+        )
+        db.add(visitor_analytics)
+        db.commit()
+        
         # You could add background tasks here for:
         # - Sending email notifications to post author
         # - Running spam checks
@@ -97,7 +121,7 @@ async def create_comment(
         )
 
 
-@router.get("/", response_model=List[CommentWithPost])  # Updated response model
+@router.get("/", response_model=List[Union[CommentWithPost, CommentWithPostAndReplies]])  
 async def get_comments(
     post_id: Optional[int] = Query(None, description="Filter by post ID"),
     status: Optional[CommentStatus] = Query(None, description="Filter by comment status"),
@@ -106,7 +130,7 @@ async def get_comments(
     skip: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(100, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: Optional[User] = Depends(get_current_user_truly_optional)
 ):
     """
     Get a list of comments with optional filtering.
@@ -133,19 +157,95 @@ async def get_comments(
     if not (current_user and current_user.is_admin):
         query = query.filter(CommentModel.status == CommentStatus.APPROVED)
     
+    print(f"DEBUG: include_replies = {include_replies}")
+    
     # Only show top-level comments unless include_replies is True
     if not include_replies:
         query = query.filter(CommentModel.parent_id.is_(None))
     
     # Apply ordering and pagination
-    comments = (
-        query.order_by(CommentModel.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-    
-    return comments
+    if include_replies:
+        # When including replies, get ALL comments for this post (no parent filtering)
+        # Then build nested structure manually
+        base_query = db.query(CommentModel).options(joinedload(CommentModel.post))
+        
+        # Apply same filters as above but don't filter by parent_id
+        if post_id is not None:
+            base_query = base_query.filter(CommentModel.post_id == post_id)
+        
+        if status:
+            base_query = base_query.filter(CommentModel.status == status)
+        
+        if author_email:
+            base_query = base_query.filter(CommentModel.author_email.ilike(f"%{author_email}%"))
+        
+        # Non-admin users can only see approved comments
+        if not (current_user and current_user.is_admin):
+            base_query = base_query.filter(CommentModel.status == CommentStatus.APPROVED)
+        
+        # Get ALL comments (both parents and replies)
+        all_comments = base_query.order_by(CommentModel.created_at.desc()).all()
+        
+        # Build nested structure
+        nested_comments = []
+        
+        # First, separate parents and replies
+        parents = [c for c in all_comments if c.parent_id is None]
+        replies = [c for c in all_comments if c.parent_id is not None]
+        
+        # Build nested structure
+        for parent in parents:
+            # Find all replies to this parent
+            parent_replies = [r for r in replies if r.parent_id == parent.id]
+            
+            # Create nested structure using dict to avoid schema validation issues
+            parent_dict = {
+                "id": parent.id,
+                "post_id": parent.post_id,
+                "author_name": parent.author_name,
+                "author_email": parent.author_email,
+                "content": parent.content,
+                "status": parent.status,
+                "ip_address": parent.ip_address,
+                "user_agent": parent.user_agent,
+                "parent_id": parent.parent_id,
+                "created_at": parent.created_at,
+                "updated_at": parent.updated_at,
+                "post": parent.post,
+                "replies": []
+            }
+            
+            # Add replies
+            for reply in parent_replies:
+                reply_dict = {
+                    "id": reply.id,
+                    "post_id": reply.post_id,
+                    "author_name": reply.author_name,
+                    "author_email": reply.author_email,
+                    "content": reply.content,
+                    "status": reply.status,
+                    "ip_address": reply.ip_address,
+                    "user_agent": reply.user_agent,
+                    "parent_id": reply.parent_id,
+                    "created_at": reply.created_at,
+                    "updated_at": reply.updated_at,
+                    "post": reply.post,
+                    "replies": []
+                }
+                parent_dict["replies"].append(reply_dict)
+            
+            nested_comments.append(parent_dict)
+        
+        return nested_comments
+    else:
+        comments = (
+            query.order_by(CommentModel.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        
+        return comments
 
 @router.get("/count")
 async def get_comments_count(

@@ -26,6 +26,8 @@ interface Post {
   author_id: number;
   category: string | null;
   featured_image: string | null;
+  featured_image_url: string | null;
+  featured_image_public_id: string | null;
   meta_title: string | null;
   meta_description: string | null;
   view_count: number;
@@ -60,6 +62,8 @@ export default function PostsPage() {
     status: "draft",
     category: "",
     featured_image: "",
+    featured_image_url: "",
+    featured_image_public_id: "",
     meta_title: "",
     meta_description: "",
     is_featured: false,
@@ -110,8 +114,7 @@ export default function PostsPage() {
         throw new Error("No authentication token found. Please log in again.");
       }
 
-      console.log("Sending file upload request...");
-      const response = await fetch(getApiUrl('api/v1/uploads/upload'), {
+      const response = await fetch(getApiUrl('api/v1/posts/upload-image'), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -119,8 +122,6 @@ export default function PostsPage() {
         body: formData,
       });
 
-      console.log("Upload response status:", response.status);
-      
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Upload failed with status:", response.status, "Error:", errorText);
@@ -128,11 +129,19 @@ export default function PostsPage() {
       }
 
       const data = await response.json();
-      console.log("Upload successful, response:", data);
       
-      // The backend returns the full URL to the uploaded file
-      // e.g., "http://localhost:8000/api/v1/uploads/filename.jpg"
-      return data.url || `/api/v1/uploads/${data.filename}`;
+      if (data.success) {
+        setFormData(prev => ({
+          ...prev,
+          featured_image: data.data.public_id,
+          featured_image_url: data.data.secure_url,
+          featured_image_public_id: data.data.public_id,
+        }));
+        setImagePreview(data.data.secure_url);
+        return data.data.secure_url;
+      } else {
+        throw new Error(data.message || 'Failed to upload image');
+      }
     } catch (error) {
       console.error("Error in handleImageUpload:", error);
       alert(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -214,11 +223,13 @@ export default function PostsPage() {
       status: post.status,
       category: post.category || "",
       featured_image: post.featured_image || "",
+      featured_image_url: post.featured_image_url || "",
+      featured_image_public_id: post.featured_image_public_id || "",
       meta_title: post.meta_title || "",
       meta_description: post.meta_description || "",
       is_featured: post.is_featured,
     });
-    setImagePreview(null);
+    setImagePreview(post.featured_image_url || null);
     setShowCreateModal(true);
   };
 
@@ -228,7 +239,8 @@ export default function PostsPage() {
     setImagePreview(null);
     setFormData({
       title: "", content: "", excerpt: "", status: "draft", category: "",
-      featured_image: "", meta_title: "", meta_description: "", is_featured: false,
+      featured_image: "", featured_image_url: "", featured_image_public_id: "", 
+      meta_title: "", meta_description: "", is_featured: false,
     });
   };
 
@@ -296,11 +308,9 @@ export default function PostsPage() {
                     <td className="py-4 pl-4">
                       <div className="flex items-center gap-4">
                         <div className="h-14 w-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                          {post.featured_image ? (
+                          {post.featured_image_url ? (
                             <img 
-                              src={post.featured_image.startsWith('http') 
-                                ? post.featured_image 
-                                : getApiUrl(post.featured_image.replace(/^\/+/, ''))} 
+                              src={post.featured_image_url} 
                               alt="" 
                               className="h-full w-full object-cover" 
                             />
@@ -383,12 +393,10 @@ export default function PostsPage() {
                   <div className="flex items-center gap-4">
                     <label className="cursor-pointer">
                       <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-blue-500 transition-colors">
-                        {imagePreview || formData.featured_image ? (
+                        {imagePreview || formData.featured_image_url ? (
                           <div className="relative w-full h-full">
                             <img 
-                              src={imagePreview || (formData.featured_image.startsWith('http') 
-                                ? formData.featured_image 
-                                : getApiUrl(formData.featured_image.replace(/^\/+/, '')))} 
+                              src={imagePreview || formData.featured_image_url} 
                               alt="Preview" 
                               className="w-full h-full object-cover rounded-lg"
                             />

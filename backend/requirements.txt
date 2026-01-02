@@ -11,3 +11,4 @@ pydantic-settings
 python-dotenv
 email-validator
 slugify
+cloudinary

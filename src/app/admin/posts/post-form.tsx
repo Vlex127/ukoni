@@ -16,6 +16,8 @@ interface PostFormProps {
     status: string;
     category: string;
     featured_image: string | null;
+    featured_image_url: string | null;
+    featured_image_public_id: string | null;
     meta_title: string;
     meta_description: string;
     is_featured: boolean;
@@ -32,6 +34,8 @@ export function PostForm({ post }: PostFormProps) {
     status: post?.status || 'draft',
     category: post?.category || '',
     featured_image: post?.featured_image || '',
+    featured_image_url: post?.featured_image_url || '',
+    featured_image_public_id: post?.featured_image_public_id || '',
     meta_title: post?.meta_title || '',
     meta_description: post?.meta_description || '',
     is_featured: post?.is_featured || false,
@@ -41,7 +45,9 @@ export function PostForm({ post }: PostFormProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (post?.featured_image) {
+    if (post?.featured_image_url) {
+      setImagePreview(post.featured_image_url);
+    } else if (post?.featured_image) {
       setImagePreview(
         post.featured_image.startsWith('http')
           ? post.featured_image
@@ -66,7 +72,7 @@ export function PostForm({ post }: PostFormProps) {
       formData.append('file', file);
 
       try {
-        const response = await fetch(getApiUrl('api/v1/uploads/upload'), {
+        const response = await fetch(getApiUrl('api/v1/posts/upload-image'), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,17 +81,25 @@ export function PostForm({ post }: PostFormProps) {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload image');
+          throw new Error('Failed to upload image to Cloudinary');
         }
 
         const data = await response.json();
-        setFormData(prev => ({
-          ...prev,
-          featured_image: data.url || `/api/v1/uploads/${data.filename}`,
-        }));
+        
+        if (data.success) {
+          setFormData(prev => ({
+            ...prev,
+            featured_image: data.data.public_id,
+            featured_image_url: data.data.secure_url,
+            featured_image_public_id: data.data.public_id,
+          }));
+          setImagePreview(data.data.secure_url);
+        } else {
+          throw new Error(data.message || 'Failed to upload image');
+        }
       } catch (error) {
         console.error('Error uploading image:', error);
-        setError('Failed to upload image. Please try again.');
+        setError('Failed to upload image to Cloudinary. Please try again.');
       }
     };
 

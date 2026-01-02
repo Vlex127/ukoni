@@ -11,6 +11,8 @@ class PostBase(BaseModel):
     status: str = "draft"
     category: Optional[str] = None
     featured_image: Optional[str] = None
+    featured_image_url: Optional[str] = None
+    featured_image_public_id: Optional[str] = None
     meta_title: Optional[str] = None
     meta_description: Optional[str] = None
     is_featured: bool = False
@@ -28,6 +30,8 @@ class PostUpdate(BaseModel):
     status: Optional[str] = None
     category: Optional[str] = None
     featured_image: Optional[str] = None
+    featured_image_url: Optional[str] = None
+    featured_image_public_id: Optional[str] = None
     meta_title: Optional[str] = None
     meta_description: Optional[str] = None
     is_featured: Optional[bool] = None

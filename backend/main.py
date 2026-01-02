@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from pathlib import Path
 import os
 from app.core.config import settings
 from app.api.v1.api import api_router
-from app.api.v1.endpoints import comments, subscribers
+from app.api.v1.endpoints import comments, subscribers, media
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -19,6 +20,8 @@ origins = [
     "http://localhost",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     # IMPORTANT: Add your deployed Frontend URL here once you deploy it (e.g. Vercel/Netlify)
     "https://ukoni.vercel.app", 
     "https://ukoni.onrender.com",
@@ -26,8 +29,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=r'https?://(localhost|127\.0\.0\.1)(:\d+)?',  # Allow any port on localhost
+    allow_origins=settings.ALLOWED_HOSTS,  # Use settings from config
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,8 +39,8 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
-app.include_router(comments.router, prefix="/api/v1/comments", tags=["comments"])
 app.include_router(subscribers.router, prefix="/api/v1/subscribers", tags=["subscribers"])
+app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
 
 # Mount static files
 BASE_DIR = Path(__file__).resolve().parent  
@@ -58,6 +60,28 @@ if os.path.exists(UPLOADS_DIR):
     app.mount("/api/v1/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 else:
     print(f"WARNING: Uploads directory not found at {UPLOADS_DIR}")
+
+# Mount test HTML file
+TEST_HTML_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", "test_upload.html"))
+if os.path.exists(TEST_HTML_PATH):
+    print(f"Serving test upload page at: /test-upload")
+    @app.get("/test-upload", response_class=HTMLResponse)
+    async def serve_test_upload():
+        with open(TEST_HTML_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+else:
+    print(f"WARNING: Test HTML file not found at {TEST_HTML_PATH}")
+
+# Mount Cloudinary post test HTML file
+CLOUDINARY_TEST_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", "test_post_cloudinary.html"))
+if os.path.exists(CLOUDINARY_TEST_PATH):
+    print(f"Serving Cloudinary post test page at: /test-post-cloudinary")
+    @app.get("/test-post-cloudinary", response_class=HTMLResponse)
+    async def serve_cloudinary_test():
+        with open(CLOUDINARY_TEST_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+else:
+    print(f"WARNING: Cloudinary test HTML file not found at {CLOUDINARY_TEST_PATH}")
 
 @app.get("/")
 async def root():

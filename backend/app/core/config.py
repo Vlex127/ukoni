@@ -21,23 +21,23 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "ukoni"
     POSTGRES_PORT: int = 5432
-    USE_SQLITE: bool = True  # Use SQLite for local development
+    USE_SQLITE: bool = True  # Force SQLite for local development
     
     # CORS
-    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"]
     
     # Frontend URLs
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"  # Default local development URL
     
+    # Cloudinary Configuration
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
+    
     @property
     def database_url(self) -> str:
-        if self.USE_SQLITE:
-            return "sqlite:///./ukoni.db"
-        if self.NEON_DATABASE_URL:
-            return self.NEON_DATABASE_URL
-        if self.DATABASE_URL:
-            return self.DATABASE_URL
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        # Force SQLite for local development - ignore all environment variables
+        return "sqlite:///./ukoni.db"
     
     class Config:
         env_file = ".env"

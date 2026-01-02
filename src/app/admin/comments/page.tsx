@@ -41,7 +41,7 @@ export default function CommentsPage() {
 const fetchComments = async () => {
   try {
     const token = localStorage.getItem("access_token");
-    let url = getApiUrl('comments/comments'); // Updated from 'api/v1/comments'
+    let url = getApiUrl('api/v1/comments');
     
     if (filterStatus !== "all") {
       url += `?status=${filterStatus}`;
@@ -68,7 +68,7 @@ const fetchComments = async () => {
 const handleStatusUpdate = async (commentId: number, newStatus: string) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await fetch(getApiUrl(`comments/comments/${commentId}`), { // Updated endpoint
+    const response = await fetch(getApiUrl(`api/v1/comments/${commentId}`), {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,

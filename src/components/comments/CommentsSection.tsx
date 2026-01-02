@@ -99,7 +99,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const data = await apiClient<Comment[]>(`/comments/comments?post_id=${postId}`);
+        const data = await apiClient<Comment[]>(`/api/v1/comments?post_id=${postId}`);
         setComments(data);
       } catch (error) {
         console.error('Error fetching comments:', error);
@@ -113,13 +113,13 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
   const onSubmit = async (data: z.infer<typeof commentSchema>) => {
     setIsSubmitting(true);
     try {
-      const newComment = await apiClient<Comment>('/comments/comments', {
+      const newComment = await apiClient<Comment>('/api/v1/comments', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           ...data,
           post_id: postId,
           parent_id: replyTo?.id || null,
-        }),
+        },
       });
       
       // Update logic...

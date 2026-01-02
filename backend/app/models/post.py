@@ -15,7 +15,9 @@ class Post(Base):
     status = Column(String, default="draft", nullable=False)  # draft, published, archived
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     category = Column(String, nullable=True, index=True)
-    featured_image = Column(String, nullable=True)
+    featured_image = Column(String, nullable=True)  # Will store Cloudinary public_id or URL
+    featured_image_url = Column(String, nullable=True)  # Store the secure URL from Cloudinary
+    featured_image_public_id = Column(String, nullable=True)  # Store Cloudinary public_id for deletion
     meta_title = Column(String, nullable=True)
     meta_description = Column(Text, nullable=True)
     view_count = Column(Integer, default=0)

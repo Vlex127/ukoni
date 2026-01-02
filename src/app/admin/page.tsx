@@ -92,7 +92,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchVisitorData = async () => {
   try {
-    const response = await fetch('/api/visitors');
+    const response = await fetch(getApiUrl('api/v1/analytics/visitors'));
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || 'Failed to fetch visitor data');
@@ -117,6 +117,9 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     console.log('Starting fetchDashboardData');
+    setLoading(true);
+    setError(null);
+    
     try {
       const token = localStorage.getItem("access_token");
       console.log('Auth token from localStorage:', token ? 'Found' : 'Not found');
@@ -128,12 +131,11 @@ export default function AdminDashboard() {
       if (token) {
         headers.append("Authorization", `Bearer ${token}`);
       }
-
+      
       // Fetch all data in parallel
-      const postsUrl = getApiUrl("posts");
-      // Use the correct comments endpoint path
-      const commentsUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/comments/comments/`;
-      const subscribersUrl = getApiUrl("subscribers/count");
+      const postsUrl = getApiUrl("api/v1/posts");
+      const commentsUrl = getApiUrl("api/v1/comments");
+      const subscribersUrl = getApiUrl("api/v1/subscribers/count");
       
       console.log('Fetching from URLs:', { postsUrl, commentsUrl, subscribersUrl });
       
@@ -143,13 +145,12 @@ export default function AdminDashboard() {
         fetch(subscribersUrl, { headers })
       ]);
       
-      
       console.log('API responses:', {
         postsStatus: postsResponse.status,
         commentsStatus: commentsResponse.status,
         subscribersStatus: subscribersResponse.status
       });
-
+      
       // Process posts response
       if (!postsResponse.ok) {
         const errorText = await postsResponse.text();
@@ -158,35 +159,32 @@ export default function AdminDashboard() {
       }
       const postsData = await postsResponse.json();
       console.log('Posts data received:', { count: postsData.length, sample: postsData[0] });
-
+      
       // Calculate stats from posts data
       const totalPosts = postsData.length;
       const userPosts = postsData.filter((post: Post) => post.author_id === Number(user?.id)).length;
       const totalViews = postsData.reduce((sum: number, post: Post) => sum + (post.view_count || 0), 0);
       
-      // Get recent posts (last 4)
-      const recent = Array.isArray(postsData)
-        ? postsData
-            .sort((a: Post, b: Post) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .slice(0, 4)
-        : [];
-
       // Process comments response
       let totalComments = 0;
       if (commentsResponse.ok) {
         const commentsData = await commentsResponse.json();
         totalComments = Array.isArray(commentsData) ? commentsData.length : 0;
+        console.log('Comments data received:', { count: totalComments });
       } else {
         console.error('Failed to fetch comments:', commentsResponse.status, await commentsResponse.text());
       }
-
+      
       // Process subscribers response
       let subscribers = 0;
       if (subscribersResponse.ok) {
         const subsData = await subscribersResponse.json();
         subscribers = subsData.count || 0;
+        console.log('Subscribers data received:', { count: subscribers });
+      } else {
+        console.error('Failed to fetch subscribers:', subscribersResponse.status, await subscribersResponse.text());
       }
-
+      
       // Update state
       setStats({
         totalPosts,
@@ -195,20 +193,29 @@ export default function AdminDashboard() {
         userPosts,
         subscribers,
       });
-
+      
+      // Get recent posts (last 4)
+      const recent = Array.isArray(postsData)
+        ? postsData
+            .sort((a: Post, b: Post) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 4)
+        : [];
+      
       setRecentPosts(recent);
+      
     } catch (error) {
       console.error("Error in fetchDashboardData:", error);
-      // Log additional error details if available
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
-      }
+      setError(error instanceof Error ? error.message : 'Failed to fetch dashboard data');
+      // Set empty data on error to prevent type issues
+      setStats({
+        totalPosts: 0,
+        totalComments: 0,
+        totalViews: 0,
+        userPosts: 0,
+        subscribers: 0,
+      });
+      setRecentPosts([]);
     } finally {
-      console.log('Finished fetchDashboardData, setting loading to false');
       setLoading(false);
     }
   };
@@ -428,7 +435,7 @@ export default function AdminDashboard() {
                   <BlogItem
                     key={post.id}
                     title={post.title}
-                    comments={0} // TODO: Fetch actual comment count
+                    comments={stats.totalComments} // Use actual comments count from stats
                     views={post.view_count}
                     color={colors[index % colors.length]}
                     slug={post.slug}

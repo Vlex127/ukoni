@@ -14,7 +14,7 @@ from app.api.v1.endpoints.auth import get_current_user, get_current_user_optiona
 from fastapi import BackgroundTasks
 from sqlalchemy import or_, func
 
-router = APIRouter(prefix="/comments", tags=["comments"])
+router = APIRouter(tags=["comments"])
 
 # Rate limiting and spam prevention would be implemented here
 # You might want to add Redis or similar for production use

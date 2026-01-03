@@ -157,8 +157,6 @@ async def get_comments(
     if not (current_user and current_user.is_admin):
         query = query.filter(CommentModel.status == CommentStatus.APPROVED)
     
-    print(f"DEBUG: include_replies = {include_replies}")
-    
     # Only show top-level comments unless include_replies is True
     if not include_replies:
         query = query.filter(CommentModel.parent_id.is_(None))

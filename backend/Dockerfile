@@ -18,6 +18,9 @@ COPY . .
 # Create uploads directory
 RUN mkdir -p /app/public/uploads
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Expose port
 EXPOSE 8080
 
@@ -26,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Start the application
-CMD ["sh", "-c", "python main.py"]
+CMD ["./start.sh"]

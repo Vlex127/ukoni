@@ -39,7 +39,7 @@ class CommentCreate(CommentBase):
     
     class Config:
         use_enum_values = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "post_id": 1,
                 "author_name": "John Doe",
@@ -75,7 +75,7 @@ class CommentInDBBase(CommentBase):
     updated_at: Optional[datetime] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
         use_enum_values = True
 
 class Comment(CommentInDBBase):
@@ -83,7 +83,7 @@ class Comment(CommentInDBBase):
     replies: List['Comment'] = []
     
     class Config:
-        orm_mode = True
+        from_attributes = True
         use_enum_values = True
 
 class CommentWithReplies(CommentInDBBase):
@@ -91,7 +91,7 @@ class CommentWithReplies(CommentInDBBase):
     replies: List['CommentWithReplies'] = []
     
     class Config:
-        orm_mode = True
+        from_attributes = True
         use_enum_values = True
 
 class CommentWithPost(CommentInDBBase):

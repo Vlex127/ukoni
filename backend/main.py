@@ -44,7 +44,26 @@ app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
 
 # Mount static files
 BASE_DIR = Path(__file__).resolve().parent  
-PUBLIC_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "public"))
+
+# Try different paths for public directory (container vs local)
+PUBLIC_DIR = None
+possible_paths = [
+    os.path.abspath(os.path.join(BASE_DIR, "..", "public")),  # Local development
+    os.path.abspath(os.path.join(BASE_DIR, "public")),       # Container
+    "/public",                                                 # Container absolute path
+]
+
+for path in possible_paths:
+    if os.path.exists(path):
+        PUBLIC_DIR = path
+        break
+
+# If no public directory found, create one in the backend directory
+if not PUBLIC_DIR:
+    PUBLIC_DIR = os.path.abspath(os.path.join(BASE_DIR, "public"))
+    os.makedirs(PUBLIC_DIR, exist_ok=True)
+    print(f"Created public directory at: {PUBLIC_DIR}")
+
 UPLOADS_DIR = os.path.join(PUBLIC_DIR, "uploads")
 
 # Mount the main public directory

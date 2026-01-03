@@ -49,12 +49,19 @@ app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
 async def startup_event():
     print("📋 Initializing database tables...")
     try:
+        # Test database connection first
+        from app.db.database import engine
+        with engine.connect() as connection:
+            print("✅ Database connection successful!")
+        
+        # Create tables
         Base.metadata.create_all(bind=engine)
         print("✅ Database tables created successfully!")
+        
     except Exception as e:
-        print(f"❌ Error creating database tables: {e}")
+        print(f"❌ Database initialization error: {e}")
+        print("⚠️  Continuing without database initialization...")
         # Don't raise the error to allow the app to start
-        # The database might be created by a separate process
 
 # Mount static files
 BASE_DIR = Path(__file__).resolve().parent  

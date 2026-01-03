@@ -44,8 +44,21 @@ class Settings(BaseSettings):
     
     @property
     def database_url(self) -> str:
-        # Force SQLite for local development - ignore all environment variables
-        return "sqlite:///./ukoni.db"
+        # Priority order for database URL
+        if self.DATABASE_URL:
+            print(f"🗄️ Using DATABASE_URL: {self.DATABASE_URL}")
+            return self.DATABASE_URL
+        elif self.NEON_DATABASE_URL:
+            print(f"🗄️ Using NEON_DATABASE_URL: {self.NEON_DATABASE_URL}")
+            return self.NEON_DATABASE_URL
+        elif self.USE_SQLITE:
+            print(f"🗄️ Using SQLite (local development)")
+            return "sqlite:///./ukoni.db"
+        else:
+            # Build PostgreSQL URL from individual settings
+            postgres_url = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            print(f"🗄️ Using PostgreSQL: {postgres_url}")
+            return postgres_url
     
     class Config:
         env_file = ".env"
@@ -54,5 +67,15 @@ class Settings(BaseSettings):
 print(f"Current working directory: {os.getcwd()}")
 print(f"Environment file being used: {os.path.abspath('.env')}")
 print(f"File exists: {os.path.exists('.env')}")
+
+# Debug Railway environment variables
+print(f"🔍 Environment Variables:")
+print(f"   DATABASE_URL: {os.environ.get('DATABASE_URL', 'NOT_SET')}")
+print(f"   NEON_DATABASE_URL: {os.environ.get('NEON_DATABASE_URL', 'NOT_SET')}")
+print(f"   POSTGRES_SERVER: {os.environ.get('POSTGRES_SERVER', 'NOT_SET')}")
+print(f"   POSTGRES_USER: {os.environ.get('POSTGRES_USER', 'NOT_SET')}")
+print(f"   POSTGRES_PASSWORD: {os.environ.get('POSTGRES_PASSWORD', 'NOT_SET')}")
+print(f"   POSTGRES_DB: {os.environ.get('POSTGRES_DB', 'NOT_SET')}")
+print(f"   POSTGRES_PORT: {os.environ.get('POSTGRES_PORT', 'NOT_SET')}")
 
 settings = Settings()

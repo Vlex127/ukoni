@@ -59,7 +59,11 @@ if os.path.exists(UPLOADS_DIR):
     print(f"Serving uploads from: {UPLOADS_DIR}")
     app.mount("/api/v1/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 else:
-    print(f"WARNING: Uploads directory not found at {UPLOADS_DIR}")
+    # Create the uploads directory if it doesn't exist
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+    print(f"Created uploads directory at: {UPLOADS_DIR}")
+    print(f"Serving uploads from: {UPLOADS_DIR}")
+    app.mount("/api/v1/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 # Mount test HTML file
 TEST_HTML_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", "test_upload.html"))

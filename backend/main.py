@@ -137,14 +137,24 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    # Get the PORT from environment variable, default to 8000 if running locally
-    port = int(os.environ.get("PORT", 8000))
     
     print(f"🚀 Starting UKONI Backend...")
-    print(f"📡 Port: {port}")
+    
+    # Debug environment variables
+    port_env = os.environ.get("PORT", "8000")
+    print(f"🔍 PORT environment variable: {port_env}")
+    print(f"🔍 PORT type: {type(port_env)}")
+    
+    try:
+        port = int(port_env)
+        print(f"📡 Port: {port}")
+    except ValueError:
+        print(f"❌ Invalid PORT value: {port_env}, using default 8000")
+        port = 8000
+    
     print(f"🌍 Host: 0.0.0.0")
     print(f"🗄️ Database URL: {settings.database_url}")
     print(f"🌐 Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'development')}")
     
-    # Run the server using the dynamic port
+    # Run the server using the port
     uvicorn.run(app, host="0.0.0.0", port=port)

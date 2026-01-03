@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     ALGORITHM: str = "HS256"
     
-    # Database - SQLite for local development
+    # Database - Support both SQLite and PostgreSQL
     DATABASE_URL: Optional[str] = None
     NEON_DATABASE_URL: Optional[str] = None  # Neon connection string
     POSTGRES_SERVER: str = "localhost"
@@ -21,10 +21,18 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "ukoni"
     POSTGRES_PORT: int = 5432
-    USE_SQLITE: bool = True  # Force SQLite for local development
+    USE_SQLITE: bool = False  # Default to PostgreSQL for production
     
     # CORS
-    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"]
+    ALLOWED_HOSTS: List[str] = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000", 
+        "http://localhost:8000", 
+        "http://127.0.0.1:8000",
+        "https://ukoni-production.up.railway.app",
+        "https://ukoni-production.up.railway.app/*",
+        "*"  # Allow all origins for Railway deployment
+    ]
     
     # Frontend URLs
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"  # Default local development URL

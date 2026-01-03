@@ -7,6 +7,8 @@ import os
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.api.v1.endpoints import comments, subscribers, media
+from app.db.database import engine, Base
+from app.models import user, post, comment, subscriber, analytics
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -41,6 +43,18 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(subscribers.router, prefix="/api/v1/subscribers", tags=["subscribers"])
 app.include_router(media.router, prefix="/api/v1/media", tags=["media"])
+
+# Initialize database tables
+@app.on_event("startup")
+async def startup_event():
+    print("📋 Initializing database tables...")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables created successfully!")
+    except Exception as e:
+        print(f"❌ Error creating database tables: {e}")
+        # Don't raise the error to allow the app to start
+        # The database might be created by a separate process
 
 # Mount static files
 BASE_DIR = Path(__file__).resolve().parent  
@@ -116,8 +130,14 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    # Get the PORT from Render's environment variable, default to 8000 if running locally
+    # Get the PORT from environment variable, default to 8000 if running locally
     port = int(os.environ.get("PORT", 8000))
+    
+    print(f"🚀 Starting UKONI Backend...")
+    print(f"📡 Port: {port}")
+    print(f"🌍 Host: 0.0.0.0")
+    print(f"🗄️ Database URL: {settings.database_url}")
+    print(f"🌐 Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'development')}")
     
     # Run the server using the dynamic port
     uvicorn.run(app, host="0.0.0.0", port=port)

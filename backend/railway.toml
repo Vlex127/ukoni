@@ -1,5 +1,5 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
 
 [deploy]
 healthcheckPath = "/health"
@@ -10,3 +10,19 @@ restartPolicyMaxRetries = 10
 [env]
 PORT = "8080"
 PYTHON_VERSION = "3.13"
+
+# Add PostgreSQL service
+[[services]]
+name = "web"
+
+[services.web]
+source = "."
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+
+[[services.web.ports]]
+port = 8080
+
+# Add PostgreSQL database
+[[services.postgres]]
+name = "postgres"

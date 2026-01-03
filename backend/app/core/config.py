@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     USE_SQLITE: bool = False  # Default to PostgreSQL for production
     
+    # Railway specific environment variables
+    RAILWAY_ENVIRONMENT: Optional[str] = None
+    RAILWAY_SERVICE_NAME: Optional[str] = None
+    RAILWAY_PROJECT_NAME: Optional[str] = None
+    
     # CORS
     ALLOWED_HOSTS: List[str] = [
         "http://localhost:3000", 
@@ -45,12 +50,17 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         # Priority order for database URL
-        if self.DATABASE_URL:
+        if self.DATABASE_URL and not self.DATABASE_URL.startswith("sqlite"):
             print(f"🗄️ Using DATABASE_URL: {self.DATABASE_URL}")
             return self.DATABASE_URL
         elif self.NEON_DATABASE_URL:
             print(f"🗄️ Using NEON_DATABASE_URL: {self.NEON_DATABASE_URL}")
             return self.NEON_DATABASE_URL
+        elif self.RAILWAY_ENVIRONMENT == "production":
+            # In Railway production, force PostgreSQL even if DATABASE_URL is SQLite
+            postgres_url = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            print(f"🗄️ Railway production - Using PostgreSQL: {postgres_url}")
+            return postgres_url
         elif self.USE_SQLITE:
             print(f"🗄️ Using SQLite (local development)")
             return "sqlite:///./ukoni.db"
@@ -77,5 +87,8 @@ print(f"   POSTGRES_USER: {os.environ.get('POSTGRES_USER', 'NOT_SET')}")
 print(f"   POSTGRES_PASSWORD: {os.environ.get('POSTGRES_PASSWORD', 'NOT_SET')}")
 print(f"   POSTGRES_DB: {os.environ.get('POSTGRES_DB', 'NOT_SET')}")
 print(f"   POSTGRES_PORT: {os.environ.get('POSTGRES_PORT', 'NOT_SET')}")
+print(f"   RAILWAY_ENVIRONMENT: {os.environ.get('RAILWAY_ENVIRONMENT', 'NOT_SET')}")
+print(f"   RAILWAY_SERVICE_NAME: {os.environ.get('RAILWAY_SERVICE_NAME', 'NOT_SET')}")
+print(f"   RAILWAY_PROJECT_NAME: {os.environ.get('RAILWAY_PROJECT_NAME', 'NOT_SET')}")
 
 settings = Settings()

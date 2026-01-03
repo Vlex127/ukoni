@@ -129,7 +129,16 @@ else:
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to UKONI Backend API"}
+    return {
+        "message": "Welcome to UKONI Backend API",
+        "status": "running",
+        "version": "1.0.0",
+        "timestamp": "2026-01-03"
+    }
+
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
 
 @app.get("/health")
 async def health_check():
@@ -155,6 +164,12 @@ if __name__ == "__main__":
     print(f"🌍 Host: 0.0.0.0")
     print(f"🗄️ Database URL: {settings.database_url}")
     print(f"🌐 Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'development')}")
+    print(f"🔗 Available endpoints:")
+    print(f"   - / (root)")
+    print(f"   - /health")
+    print(f"   - /ping")
+    print(f"   - /api/v1/*")
     
     # Run the server using the port
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"🚀 Starting uvicorn on 0.0.0.0:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

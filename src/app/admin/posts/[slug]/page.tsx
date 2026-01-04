@@ -2,28 +2,35 @@
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
 import { PostForm } from '../post-form';
 import { useEffect, useState } from 'react';
 
 interface Post {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
   excerpt: string | null;
   status: string;
   category: string | null;
-  featured_image: string | null;
-  featured_image_url: string | null;
-  featured_image_public_id: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  is_featured: boolean;
+  featuredImage: string | null;
+  featuredImageUrl: string | null;
+  featuredImagePublicId: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  viewCount: number;
+  isFeatured: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    username: string;
+    fullName: string | null;
+  };
 }
 
 export default function EditPostPage() {
-  const { user } = useAuth();
   const params = useParams();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,20 +45,11 @@ export default function EditPostPage() {
           return;
         }
 
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          setError('Authentication required');
-          setLoading(false);
-          return;
-        }
-
-        // First, fetch all posts
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        // Fetch posts using our API
         const response = await fetch(
-          `${baseUrl}/api/v1/posts`,
+          `/api/posts?slug=${params.slug}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
@@ -59,13 +57,13 @@ export default function EditPostPage() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.detail || 'Failed to fetch posts');
+          throw new Error(errorData.error || 'Failed to fetch post');
         }
 
-        const posts = await response.json();
+        const postsData = await response.json();
         
         // Find the post with the matching slug
-        const foundPost = posts.find((p: any) => p.slug === params.slug);
+        const foundPost = postsData.posts?.find((p: any) => p.slug === params.slug);
         
         if (!foundPost) {
           setError('Post not found');
@@ -81,16 +79,8 @@ export default function EditPostPage() {
       }
     };
 
-    if (user) {
-      fetchPost();
-    } else {
-      setLoading(false);
-    }
-  }, [user, params.slug]);
-
-  if (!user) {
-    return notFound();
-  }
+    fetchPost();
+  }, [params.slug]);
 
   if (loading) {
     return (

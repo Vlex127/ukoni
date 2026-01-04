@@ -2,13 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // domains: ['localhost'],  <-- REMOVE THIS LINE
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8000',
-        pathname: '/**', 
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
       },
       {
         protocol: 'https',
@@ -30,7 +28,6 @@ const nextConfig: NextConfig = {
         hostname: 'avatars.githubusercontent.com',
         pathname: '/**',
       },
-      // If you use Unsplash (common for placeholders), add this too:
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
@@ -38,6 +35,7 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  allowedDevOrigins: ['127.0.0.1'],
 };
 
 export default nextConfig;

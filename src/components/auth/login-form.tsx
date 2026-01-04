@@ -1,10 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@/contexts/auth-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Sparkles } from "lucide-react"
 import Link from "next/link"
 
@@ -16,17 +14,31 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { login, error } = useAuth()
+  const [error, setError] = useState("")
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError("")
 
     try {
-      await login(email, password)
-      onSuccess?.()
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError("Invalid email or password")
+      } else {
+        onSuccess?.()
+        router.push('/admin')
+        router.refresh()
+      }
     } catch (error) {
       console.error("Login failed:", error)
+      setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -48,8 +60,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
               id="email"
               type="email"
               value={email}
@@ -57,12 +71,15 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               placeholder="Enter your email"
               required
               disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           
           <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
               id="password"
               type="password"
               value={password}
@@ -70,6 +87,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               placeholder="Enter your password"
               required
               disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -80,13 +98,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           </div>
         )}
 
-        <Button
+        <button
           type="submit"
-          className="w-full"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
           {isLoading ? "Signing in..." : "Sign in"}
-        </Button>
+        </button>
       </form>
 
       <div className="text-center mt-6">

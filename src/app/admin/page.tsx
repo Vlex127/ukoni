@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
+import { useSession } from "next-auth/react";
 import { getApiUrl } from "@/lib/api";
 import { getImageUrl } from "@/lib/image";
 import VisitorsChart from "@/components/ui/VisitorsChart";
@@ -22,28 +22,27 @@ import Link from "next/link";
 import { Spinner } from "@/components/ui/spinner";
 
 interface Post {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
   excerpt: string | null;
   status: string;
-  author_id: number;
+  authorId: string;
   category: string | null;
-  featured_image: string | null;
-  featured_image_url: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  view_count: number;
-  is_featured: boolean;
-  published_at: string | null;
-  created_at: string;
-  updated_at: string | null;
+  featuredImage: string | null;
+  featuredImageUrl: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  viewCount: number;
+  isFeatured: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
   author: {
-    id: number;
+    id: string;
     username: string;
-    email: string;
-    full_name: string | null;
+    fullName: string | null;
   };
 }
 
@@ -56,7 +55,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalPosts: 0,
@@ -80,34 +79,41 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Color palette for post items
+  const colors = [
+    'bg-blue-200',
+    'bg-green-200', 
+    'bg-purple-200',
+    'bg-pink-200',
+    'bg-yellow-200',
+    'bg-indigo-200',
+    'bg-red-200',
+    'bg-orange-200'
+  ];
+
   useEffect(() => {
-    console.log('useEffect triggered, user:', user);
-    if (user) {
+    console.log('useEffect triggered, session:', session);
+    if (session) {
       console.log('User is authenticated, fetching dashboard data...');
       fetchDashboardData();
     } else {
       console.log('User is not authenticated, skipping data fetch');
     }
-  }, [user]);
+  }, [session]);
 
   useEffect(() => {
     const fetchVisitorData = async () => {
     try {
-      const token = localStorage.getItem("access_token");
       const headers = new Headers({
         "Content-Type": "application/json",
       });
       
-      if (token) {
-        headers.append("Authorization", `Bearer ${token}`);
-      }
-      
       // Use the working stats endpoint instead of the broken time series endpoint
-      const response = await fetch(getApiUrl('api/v1/analytics/visitors/stats'), { headers });
+      const response = await fetch('/api/analytics', { headers });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to fetch visitor data');
+        throw new Error(errorData.error || 'Failed to fetch visitor data');
       }
       
       const data = await response.json();
@@ -116,7 +122,7 @@ export default function AdminDashboard() {
       const today = new Date().toISOString().split('T')[0];
       const currentPeriodData = [{
         date: today,
-        count: data.current_period.total_visitors,
+        count: data.current_period?.total_visitors || 0,
         page_visitors: data.current_period.page_visitors,
         comment_visitors: data.current_period.comment_visitors
       }];
@@ -151,21 +157,15 @@ export default function AdminDashboard() {
     setError(null);
     
     try {
-      const token = localStorage.getItem("access_token");
-      console.log('Auth token from localStorage:', token ? 'Found' : 'Not found');
       const headers = new Headers({
         "Content-Type": "application/json",
         "Accept": "application/json"
       });
       
-      if (token) {
-        headers.append("Authorization", `Bearer ${token}`);
-      }
-      
       // Fetch all data in parallel
-      const postsUrl = getApiUrl("api/v1/posts");
-      const commentsUrl = getApiUrl("api/v1/comments");
-      const subscribersUrl = getApiUrl("api/v1/subscribers/count");
+      const postsUrl = "/api/posts";
+      const commentsUrl = "/api/comments";
+      const subscribersUrl = "/api/subscribers";
       
       console.log('Fetching from URLs:', { postsUrl, commentsUrl, subscribersUrl });
       
@@ -190,10 +190,14 @@ export default function AdminDashboard() {
       const postsData = await postsResponse.json();
       console.log('Posts data received:', { count: postsData.length, sample: postsData[0] });
       
+      // Extract posts array from response
+      const postsArray = Array.isArray(postsData) ? postsData : postsData.posts || [];
+      console.log('Posts array extracted:', { count: postsArray.length, sample: postsArray[0] });
+      
       // Calculate stats from posts data
-      const totalPosts = postsData.length;
-      const userPosts = postsData.filter((post: Post) => post.author_id === Number(user?.id)).length;
-      const totalViews = postsData.reduce((sum: number, post: Post) => sum + (post.view_count || 0), 0);
+      const totalPosts = postsArray.length;
+      const userPosts = postsArray.filter((post: Post) => post.authorId === session?.user?.id).length;
+      const totalViews = postsArray.reduce((sum: number, post: Post) => sum + (post.viewCount || 0), 0);
       
       // Process comments response
       let totalComments = 0;
@@ -225,11 +229,9 @@ export default function AdminDashboard() {
       });
       
       // Get recent posts (last 4)
-      const recent = Array.isArray(postsData)
-        ? postsData
-            .sort((a: Post, b: Post) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .slice(0, 4)
-        : [];
+      const recent = postsArray
+        .sort((a: Post, b: Post) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 4);
       
       setRecentPosts(recent);
       
@@ -250,7 +252,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (!user) return null;
+  if (!session) return null;
 
   if (loading) {
     return (
@@ -289,7 +291,7 @@ export default function AdminDashboard() {
           </div>
           {/* User Avatar Placeholder */}
            <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden relative">
-             <img src={`https://ui-avatars.com/api/?name=${user?.username}&background=random`} alt="Profile" className="object-cover"/>
+             <img src={`https://ui-avatars.com/api/?name=${session?.user?.username}&background=random`} alt="Profile" className="object-cover"/>
            </div>
         </div>
       </header>
@@ -316,7 +318,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mt-4">
-            <h2 className="text-xl font-bold text-gray-800">{user.username}</h2>
+            <h2 className="text-xl font-bold text-gray-800">{session?.user?.username || 'Admin'}</h2>
             <p className="text-gray-400 text-sm">Writer/Author</p>
           </div>
 
@@ -459,27 +461,22 @@ export default function AdminDashboard() {
 
           <div className="flex flex-col gap-4">
             {recentPosts.length > 0 ? (
-              recentPosts.map((post, index) => {
-                const colors = ["bg-pink-100", "bg-teal-100", "bg-blue-100", "bg-orange-100"];
-                return (
-                  <BlogItem
-                    key={post.id}
-                    title={post.title}
-                    comments={stats.totalComments} // Use actual comments count from stats
-                    views={post.view_count}
-                    color={colors[index % colors.length]}
-                    slug={post.slug}
-                    status={post.status}
-                    featured_image={post.featured_image}
-                    featured_image_url={post.featured_image_url}
-                    created_at={post.created_at}
-                  />
-                );
-              })
+              recentPosts.map((post, index) => (
+                <BlogItem
+                  key={post.id}
+                  title={post.title}
+                  comments={0} // TODO: Add comment count
+                  views={post.viewCount}
+                  color={colors[index % colors.length]}
+                  slug={post.slug}
+                  status={post.status}
+                  featuredImage={post.featuredImage}
+                  featuredImageUrl={post.featuredImageUrl}
+                  createdAt={post.createdAt}
+                />
+              ))
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No recent posts found.</p>
-              </div>
+              <p className="text-gray-500 text-center py-4">No recent posts found</p>
             )}
           </div>
         </div>
@@ -495,9 +492,9 @@ interface BlogItemProps {
   color?: string;
   slug: string;
   status?: string;
-  featured_image?: string | null;
-  featured_image_url?: string | null;
-  created_at?: string;
+  featuredImage?: string | null;
+  featuredImageUrl?: string | null;
+  createdAt?: string;
 }
 
 function BlogItem({
@@ -507,9 +504,9 @@ function BlogItem({
   color = 'bg-gray-200',
   slug,
   status,
-  featured_image,
-  featured_image_url,
-  created_at
+  featuredImage,
+  featuredImageUrl,
+  createdAt
 }: BlogItemProps) {
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -538,21 +535,21 @@ function BlogItem({
 
   useEffect(() => {
     // Prioritize Cloudinary URL over local path
-    if (featured_image_url) {
-      setImageUrl(featured_image_url);
-    } else if (featured_image) {
+    if (featuredImageUrl) {
+      setImageUrl(featuredImageUrl);
+    } else if (featuredImage) {
       // Fall back to local image logic
-      let formattedUrl = featured_image;
-      if (!featured_image.startsWith('http') && !featured_image.startsWith('blob:')) {
+      let formattedUrl = featuredImage;
+      if (!featuredImage.startsWith('http') && !featuredImage.startsWith('blob:')) {
         // Remove any leading slashes to prevent double slashes
-        const cleanPath = featured_image.replace(/^\/+/, '');
+        const cleanPath = featuredImage.replace(/^\/+/, '');
         formattedUrl = getApiUrl(cleanPath);
       }
       setImageUrl(formattedUrl);
     } else {
       setImageUrl(null);
     }
-  }, [featured_image, featured_image_url]);
+  }, [featuredImage, featuredImageUrl]);
 
   return (
     <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
@@ -588,9 +585,9 @@ function BlogItem({
           </div>
           
           <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-            {created_at && (
+            {createdAt && (
               <span className="flex items-center gap-1">
-                <CalendarDays size={12} /> {formatDate(created_at)}
+                <CalendarDays size={12} /> {formatDate(createdAt)}
               </span>
             )}
             <span className="flex items-center gap-1">

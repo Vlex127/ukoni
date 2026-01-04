@@ -1,36 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UKONI - Next.js Application
+
+A modern full-stack application built with Next.js, TypeScript, Neon PostgreSQL, and NextAuth.js.
+
+## Tech Stack
+
+- **Frontend**: Next.js 16 with TypeScript
+- **Backend**: Next.js API Routes
+- **Database**: Neon PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **File Storage**: Cloudinary
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI + shadcn/ui
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ installed
+- Neon PostgreSQL database
+- Cloudinary account (for image uploads)
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd ukoni
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Configure your environment variables in `.env`:
+```env
+# Database Configuration
+DATABASE_URL=postgresql://your-neon-db-url
 
-## Learn More
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
 
-To learn more about Next.js, take a look at the following resources:
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Set up the database:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+6. Run the development server:
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   │   ├── auth/          # NextAuth.js routes
+│   │   ├── posts/         # Post management
+│   │   ├── comments/      # Comment system
+│   │   ├── subscribers/   # Newsletter subscriptions
+│   │   ├── media/         # File uploads
+│   │   └── analytics/     # Analytics tracking
+│   └── (pages)/           # Application pages
+├── lib/                   # Utility libraries
+│   ├── prisma.ts         # Prisma client
+│   ├── auth.ts           # NextAuth configuration
+│   └── cloudinary.ts     # Cloudinary integration
+├── prisma/               # Database schema and migrations
+├── types/                # TypeScript type definitions
+└── public/               # Static assets
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/signin` - Sign in
+- `POST /api/auth/signout` - Sign out
+
+### Posts
+- `GET /api/posts` - Get all posts
+- `POST /api/posts` - Create a new post
+- `GET /api/posts/[slug]` - Get a specific post
+- `PUT /api/posts/[slug]` - Update a post
+- `DELETE /api/posts/[slug]` - Delete a post
+
+### Comments
+- `GET /api/comments` - Get comments
+- `POST /api/comments` - Create a comment
+- `PUT /api/comments/[id]` - Update comment status
+- `DELETE /api/comments/[id]` - Delete a comment
+
+### Media
+- `POST /api/media/upload` - Upload file to Cloudinary
+- `POST /api/media/delete` - Delete file from Cloudinary
+
+### Subscribers
+- `GET /api/subscribers` - Get subscribers (admin only)
+- `POST /api/subscribers` - Subscribe to newsletter
+
+### Analytics
+- `GET /api/analytics` - Get analytics data (admin only)
+- `POST /api/analytics` - Track analytics event
+
+## Database Schema
+
+The application uses the following main models:
+
+- **User**: User accounts and authentication
+- **Post**: Blog posts and articles
+- **Comment**: Nested comment system
+- **Subscriber**: Newsletter subscribers
+- **Analytics**: Event tracking and analytics
+
+## Deployment
+
+### Environment Variables for Production
+
+Make sure to set these environment variables in your production environment:
+
+```env
+DATABASE_URL=your-production-neon-db-url
+NEXTAUTH_URL=https://your-domain.com
+NEXTAUTH_SECRET=your-production-secret
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+```
+
+## Development
+
+### Database Management
+
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Push schema changes to database
+npx prisma db push
+
+# View database in Prisma Studio
+npx prisma studio
+```
+
+### Code Style
+
+This project uses TypeScript and follows the Next.js conventions.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.

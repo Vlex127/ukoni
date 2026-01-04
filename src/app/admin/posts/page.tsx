@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
-import { getApiUrl } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 import { 
   Plus, 
   Search, 
@@ -17,29 +16,28 @@ import {
 } from "lucide-react";
 
 interface Post {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
   excerpt: string | null;
   status: string;
-  author_id: number;
+  authorId: string;
   category: string | null;
-  featured_image: string | null;
-  featured_image_url: string | null;
-  featured_image_public_id: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  view_count: number;
-  is_featured: boolean;
-  published_at: string | null;
-  created_at: string;
-  updated_at: string | null;
+  featuredImage: string | null;
+  featuredImageUrl: string | null;
+  featuredImagePublicId: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  viewCount: number;
+  isFeatured: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
   author: {
-    id: number;
+    id: string;
     username: string;
-    email: string;
-    full_name: string | null;
+    fullName: string | null;
   };
 }
 
@@ -49,7 +47,7 @@ const categories = [
 ];
 
 export default function PostsPage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,12 +59,12 @@ export default function PostsPage() {
     excerpt: "",
     status: "draft",
     category: "",
-    featured_image: "",
-    featured_image_url: "",
-    featured_image_public_id: "",
-    meta_title: "",
-    meta_description: "",
-    is_featured: false,
+    featuredImage: "",
+    featuredImageUrl: "",
+    featuredImagePublicId: "",
+    metaTitle: "",
+    metaDescription: "",
+    isFeatured: false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -77,17 +75,17 @@ export default function PostsPage() {
 
   const fetchPosts = async () => {
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(getApiUrl('api/v1/posts'), {
+      const response = await fetch('/api/posts', {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setPosts(data);
+        // Handle both array and object with posts property
+        const postsArray = Array.isArray(data) ? data : data.posts || [];
+        setPosts(postsArray);
       }
     } catch (error) {
       console.error("Failed to fetch posts:", error);
@@ -105,20 +103,13 @@ export default function PostsPage() {
     if (!file) return null;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
+    
     try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("No authentication token found. Please log in again.");
-      }
-
-      const response = await fetch(getApiUrl('api/v1/posts/upload-image'), {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/media/upload', {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       });
 
@@ -129,16 +120,22 @@ export default function PostsPage() {
       }
 
       const data = await response.json();
+      console.log('Upload response:', data);
       
       if (data.success) {
         setFormData(prev => ({
           ...prev,
-          featured_image: data.data.public_id,
-          featured_image_url: data.data.secure_url,
-          featured_image_public_id: data.data.public_id,
+          featuredImage: data.data.publicId,
+          featuredImageUrl: data.data.url,
+          featuredImagePublicId: data.data.publicId,
         }));
-        setImagePreview(data.data.secure_url);
-        return data.data.secure_url;
+        setImagePreview(data.data.url);
+        console.log('Form data after upload:', {
+          featuredImage: data.data.publicId,
+          featuredImageUrl: data.data.url,
+          featuredImagePublicId: data.data.publicId,
+        });
+        return data.data.url;
       } else {
         throw new Error(data.message || 'Failed to upload image');
       }
@@ -163,7 +160,7 @@ export default function PostsPage() {
     if (imagePath) {
       setFormData(prev => ({
         ...prev,
-        featured_image: imagePath
+        featuredImage: imagePath
       }));
     }
   };
@@ -171,21 +168,21 @@ export default function PostsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("access_token");
       const url = editingPost
-        ? getApiUrl(`api/v1/posts/${editingPost.id}`)
-        : getApiUrl('api/v1/posts');
+        ? `/api/posts/${editingPost.slug}`
+        : '/api/posts';
       
       const method = editingPost ? "PUT" : "POST";
       
       const response = await fetch(url, {
         method,
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
+
+      console.log('Form data being sent:', formData);
 
       if (response.ok) {
         await fetchPosts();
@@ -199,13 +196,11 @@ export default function PostsPage() {
     }
   };
 
-  const handleDelete = async (postId: number) => {
+  const handleDelete = async (postId: string) => {
     if (!confirm("Are you sure you want to delete this post?")) return;
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(getApiUrl(`api/v1/posts/${postId}`), {
+      const response = await fetch(`/api/posts/${postId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) await fetchPosts();
@@ -222,14 +217,14 @@ export default function PostsPage() {
       excerpt: post.excerpt || "",
       status: post.status,
       category: post.category || "",
-      featured_image: post.featured_image || "",
-      featured_image_url: post.featured_image_url || "",
-      featured_image_public_id: post.featured_image_public_id || "",
-      meta_title: post.meta_title || "",
-      meta_description: post.meta_description || "",
-      is_featured: post.is_featured,
+      featuredImage: post.featuredImage || "",
+      featuredImageUrl: post.featuredImageUrl || "",
+      featuredImagePublicId: post.featuredImagePublicId || "",
+      metaTitle: post.metaTitle || "",
+      metaDescription: post.metaDescription || "",
+      isFeatured: post.isFeatured,
     });
-    setImagePreview(post.featured_image_url || null);
+    setImagePreview(post.featuredImageUrl || null);
     setShowCreateModal(true);
   };
 
@@ -239,12 +234,16 @@ export default function PostsPage() {
     setImagePreview(null);
     setFormData({
       title: "", content: "", excerpt: "", status: "draft", category: "",
-      featured_image: "", featured_image_url: "", featured_image_public_id: "", 
-      meta_title: "", meta_description: "", is_featured: false,
+      featuredImage: "",
+      featuredImageUrl: "",
+      featuredImagePublicId: "", 
+      metaTitle: "",
+      metaDescription: "",
+      isFeatured: false,
     });
   };
 
-  if (!user) return null;
+  if (!session) return null;
 
   return (
     <div className="space-y-8">
@@ -308,9 +307,9 @@ export default function PostsPage() {
                     <td className="py-4 pl-4">
                       <div className="flex items-center gap-4">
                         <div className="h-14 w-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                          {post.featured_image_url ? (
+                          {post.featuredImageUrl ? (
                             <img 
-                              src={post.featured_image_url} 
+                              src={post.featuredImageUrl} 
                               alt="" 
                               className="h-full w-full object-cover" 
                             />
@@ -323,7 +322,7 @@ export default function PostsPage() {
                         <div>
                           <p className="font-bold text-gray-800 line-clamp-1">{post.title}</p>
                           <p className="text-xs text-gray-400 mt-1">
-                            by {post.author.full_name || post.author.username} • {new Date(post.created_at).toLocaleDateString()}
+                            by {post.author.fullName || post.author.username} • {new Date(post.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -393,10 +392,10 @@ export default function PostsPage() {
                   <div className="flex items-center gap-4">
                     <label className="cursor-pointer">
                       <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-blue-500 transition-colors">
-                        {imagePreview || formData.featured_image_url ? (
+                        {imagePreview || formData.featuredImageUrl ? (
                           <div className="relative w-full h-full">
                             <img 
-                              src={imagePreview || formData.featured_image_url} 
+                              src={imagePreview || formData.featuredImageUrl} 
                               alt="Preview" 
                               className="w-full h-full object-cover rounded-lg"
                             />
@@ -484,8 +483,8 @@ export default function PostsPage() {
                   <label className="flex items-center gap-3 p-4 border border-blue-100 bg-blue-50/50 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={formData.is_featured}
-                      onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                      checked={formData.isFeatured}
+                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
                       className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
                     <span className="text-gray-700 font-medium">Mark as Featured Post</span>
@@ -528,9 +527,7 @@ function StatusBadge({ status }: { status: string }) {
   const currentStyle = styles[status as keyof typeof styles] || "bg-gray-100 text-gray-700";
 
   return (
-    <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${currentStyle} capitalize`}>
-      {status}
-    </span>
+    <span className={`text-xs px-2 py-0.5 rounded-full ${currentStyle}`}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
   );
 }
 

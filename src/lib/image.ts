@@ -2,7 +2,7 @@ import { API_BASE_URL } from './api';
 
 /**
  * Get the correct URL for an image
- * @param path The image path from the database (e.g., 'uploads/filename.jpg', '/api/v1/uploads/filename.jpg', or full URL)
+ * @param path The image path from the database (e.g., 'uploads/filename.jpg', '/api/uploads/filename.jpg', or full URL)
  * @returns The complete URL to the image
  */
 export const getImageUrl = (path: string | null): string => {
@@ -15,9 +15,9 @@ export const getImageUrl = (path: string | null): string => {
     return path;
   }
   
-  // Handle paths that start with /api/v1/uploads/
+  // Handle paths that start with /api/uploads/
   if (path.includes('uploads/')) {
-    // Extract the filename (handle both /api/v1/uploads/ and direct uploads/ paths)
+    // Extract the filename (handle both /api/uploads/ and direct uploads/ paths)
     const filename = path.split('uploads/').pop() || '';
     // Return the full URL to the image
     return `${API_BASE_URL}/uploads/${filename}`;

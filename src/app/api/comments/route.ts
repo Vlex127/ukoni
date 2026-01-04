@@ -1,69 +1,97 @@
-// src/app/api/comments/route.ts
-import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
-import { getApiUrl } from '@/lib/api';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
 
-export async function POST(request: Request) {
+const commentSchema = z.object({
+  postId: z.string(),
+  authorName: z.string().min(1),
+  authorEmail: z.string().email(),
+  content: z.string().min(1),
+  parentId: z.string().optional(),
+})
+
+export async function GET(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const userAgent = headersList.get('user-agent') || '';
-    const forwardedFor = headersList.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const postId = searchParams.get('postId')
 
-    const body = await request.json();
+    const where: any = {}
     
-    const response = await fetch(getApiUrl('comments'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    if (status) where.status = status
+    if (postId) where.postId = postId
+
+    const comments = await prisma.comment.findMany({
+      where,
+      include: {
+        post: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          }
+        },
+        parent: {
+          select: {
+            id: true,
+            authorName: true,
+          }
+        }
       },
-      body: JSON.stringify({
-        ...body,
-        ip_address: ip,
-        user_agent: userAgent,
-      }),
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Error creating comment:', error);
-    return NextResponse.json(
-      { error: 'Failed to create comment' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const postId = searchParams.get('post_id');
-    const parentId = searchParams.get('parent_id');
-    
-    let url = getApiUrl('comments');
-    if (postId) {
-      url += `?post_id=${postId}`;
-      if (parentId) {
-        url += `&parent_id=${parentId}`;
+      orderBy: {
+        createdAt: 'desc'
       }
-    }
+    })
 
-    const response = await fetch(url, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch comments');
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(comments)
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    console.error('Comments GET error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch comments' },
       { status: 500 }
-    );
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const validatedData = commentSchema.parse(body)
+
+    const comment = await prisma.comment.create({
+      data: {
+        ...validatedData,
+        ipAddress: request.ip || '127.0.0.1',
+        userAgent: request.headers.get('user-agent') || '',
+      },
+      include: {
+        post: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(comment, { status: 201 })
+  } catch (error) {
+    console.error('Comments POST error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create comment' },
+      { status: 500 }
+    )
   }
 }

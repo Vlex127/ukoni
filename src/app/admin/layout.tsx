@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -12,25 +12,28 @@ import {
   Settings,
   LogOut 
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, logout } = useAuth(); 
+  const { data: session, status } = useSession(); 
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [user, isLoading, router]);
+  }, [status, router]);
 
-  if (isLoading) return <LoadingScreen />;
-  if (!user) return null;
+  if (status === "loading") return <LoadingScreen />;
+  if (!session) return null;
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F7FE] flex font-sans">
@@ -55,7 +58,7 @@ export default function AdminLayout({
         {/* Logout */}
         <div className="mt-auto">
           <button 
-            onClick={logout}
+            onClick={handleLogout}
             className="p-3 text-gray-400 hover:text-red-500 transition-colors"
           >
             <LogOut size={24} />
@@ -91,9 +94,8 @@ function SidebarIcon({ icon, href, active }: { icon: React.ReactNode; href: stri
 
 function LoadingScreen() {
   return (
-<div className="max-w-7xl mx-auto flex items-center justify-center min-h-screen">
- 
-<Spinner/>
-      </div>
+    <div className="max-w-7xl mx-auto flex items-center justify-center min-h-screen">
+      <div className="text-gray-500">Loading...</div>
+    </div>
   );
 }

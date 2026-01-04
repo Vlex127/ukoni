@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
+import { useSession } from 'next-auth/react';
 import { getApiUrl } from '@/lib/api';
 
 interface Comment {
@@ -25,7 +25,7 @@ interface Comment {
 }
 
 export default function CommentsPage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -163,7 +163,7 @@ const handleStatusUpdate = async (commentId: number, newStatus: string) => {
     return counts;
   };
 
-  if (!user) return null;
+  if (!session) return null;
 
   const statusCounts = getStatusCounts();
 

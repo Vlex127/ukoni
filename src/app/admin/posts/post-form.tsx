@@ -2,53 +2,50 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
-import { getApiUrl } from '@/lib/api';
 import { Loader2, Image as ImageIcon, X } from 'lucide-react';
 
 interface PostFormProps {
   post?: {
-    id?: number;
+    id?: string;
     title: string;
     slug: string;
     content: string;
     excerpt: string;
     status: string;
     category: string;
-    featured_image: string | null;
-    featured_image_url: string | null;
-    featured_image_public_id: string | null;
-    meta_title: string;
-    meta_description: string;
-    is_featured: boolean;
+    featuredImage: string | null;
+    featuredImageUrl: string | null;
+    featuredImagePublicId: string | null;
+    metaTitle: string;
+    metaDescription: string;
+    isFeatured: boolean;
   };
 }
 
 export function PostForm({ post }: PostFormProps) {
   const router = useRouter();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
   const [formData, setFormData] = useState({
     title: post?.title || '',
     content: post?.content || '',
     excerpt: post?.excerpt || '',
     status: post?.status || 'draft',
     category: post?.category || '',
-    featured_image: post?.featured_image || '',
-    featured_image_url: post?.featured_image_url || '',
-    featured_image_public_id: post?.featured_image_public_id || '',
-    meta_title: post?.meta_title || '',
-    meta_description: post?.meta_description || '',
-    is_featured: post?.is_featured || false,
+    featuredImage: post?.featuredImage || '',
+    featuredImageUrl: post?.featuredImageUrl || '',
+    featuredImagePublicId: post?.featuredImagePublicId || '',
+    metaTitle: post?.metaTitle || '',
+    metaDescription: post?.metaDescription || '',
+    isFeatured: post?.isFeatured || false,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (post?.featured_image_url) {
-      setImagePreview(post.featured_image_url);
-    } else if (post?.featured_image && post.featured_image.startsWith('http')) {
-      setImagePreview(post.featured_image);
+    if (post?.featuredImageUrl) {
+      setImagePreview(post.featuredImageUrl);
+    } else if (post?.featuredImage && post.featuredImage.startsWith('http')) {
+      setImagePreview(post.featuredImage);
     }
   }, [post]);
 
@@ -68,11 +65,8 @@ export function PostForm({ post }: PostFormProps) {
       formData.append('file', file);
 
       try {
-        const response = await fetch(getApiUrl('api/v1/posts/upload-image'), {
+        const response = await fetch('/api/media/upload', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
           body: formData,
         });
 
@@ -85,11 +79,11 @@ export function PostForm({ post }: PostFormProps) {
         if (data.success) {
           setFormData(prev => ({
             ...prev,
-            featured_image: data.data.public_id,
-            featured_image_url: data.data.secure_url,
-            featured_image_public_id: data.data.public_id,
+            featuredImage: data.data.publicId,
+            featuredImageUrl: data.data.url,
+            featuredImagePublicId: data.data.publicId,
           }));
-          setImagePreview(data.data.secure_url);
+          setImagePreview(data.data.url);
         } else {
           throw new Error(data.message || 'Failed to upload image');
         }
@@ -106,25 +100,29 @@ export function PostForm({ post }: PostFormProps) {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const url = post?.id
-      ? getApiUrl(`api/v1/posts/${post.id}`)
-      : getApiUrl('api/v1/posts/');
+    const url = post?.slug
+      ? `/api/posts/${post.slug}`
+      : '/api/posts';
 
-    const method = post?.id ? 'PUT' : 'POST';
+    const method = post?.slug ? 'PUT' : 'POST';
 
     try {
+      console.log('Form data being sent:', formData);
+      console.log('Request URL:', url);
+      console.log('Request method:', method);
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to save post');
+        console.error('API Error Response:', errorData);
+        throw new Error(errorData.detail || errorData.error || 'Failed to save post');
       }
 
       // Redirect to posts list after successful save
@@ -281,8 +279,8 @@ export function PostForm({ post }: PostFormProps) {
         <input
           type="checkbox"
           id="is_featured"
-          checked={formData.is_featured}
-          onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+          checked={formData.isFeatured}
+          onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label htmlFor="is_featured" className="ml-2 block text-sm text-gray-700">
@@ -300,8 +298,8 @@ export function PostForm({ post }: PostFormProps) {
           <input
             type="text"
             id="meta_title"
-            value={formData.meta_title}
-            onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+            value={formData.metaTitle}
+            onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -313,8 +311,8 @@ export function PostForm({ post }: PostFormProps) {
           <textarea
             id="meta_description"
             rows={3}
-            value={formData.meta_description}
-            onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+            value={formData.metaDescription}
+            onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

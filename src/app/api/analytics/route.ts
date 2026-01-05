@@ -7,7 +7,7 @@ import { z } from 'zod'
 const analyticsSchema = z.object({
   event: z.string(),
   postId: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export async function GET(request: NextRequest) {

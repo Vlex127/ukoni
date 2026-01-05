@@ -129,16 +129,16 @@ export default function EditPostPage() {
         <h1 className="text-2xl font-bold text-gray-900">Edit Post</h1>
       </div>
       <PostForm 
-  post={{
-    ...post,
-    excerpt: post.excerpt || "",
-    category: post.category || "",
-    meta_title: post.meta_title || "",
-    meta_description: post.meta_description || "",
-    // If featured_image is allowed to be null in the form, you can leave it. 
-    // If the form complains about that too later, add: featured_image: post.featured_image || null 
-  }} 
-/>
+        post={{
+          ...post,
+          excerpt: post.excerpt || "",
+          category: post.category || "",
+          metaTitle: post.metaTitle || "",
+          metaDescription: post.metaDescription || "",
+          // If featured_image is allowed to be null in the form, you can leave it. 
+          // If the form complains about that too later, add: featured_image: post.featured_image || null 
+        }} 
+      />
     </div>
   );
 }

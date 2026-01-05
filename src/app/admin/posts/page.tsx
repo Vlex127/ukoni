@@ -141,7 +141,8 @@ export default function PostsPage() {
       }
     } catch (error) {
       console.error("Error in handleImageUpload:", error);
-      alert(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(errorMessage); // This will now show the specific error like "File too large. Maximum size is 5MB."
       return null;
     } finally {
       setIsUploading(false);
@@ -155,14 +156,8 @@ export default function PostsPage() {
     // Create preview URL
     setImagePreview(URL.createObjectURL(file));
     
-    // Upload the file
-    const imagePath = await handleImageUpload(file);
-    if (imagePath) {
-      setFormData(prev => ({
-        ...prev,
-        featuredImage: imagePath
-      }));
-    }
+    // Upload the file - the handleImageUpload function already sets the form data correctly
+    await handleImageUpload(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,16 +177,18 @@ export default function PostsPage() {
         body: JSON.stringify(formData),
       });
 
-      console.log('Form data being sent:', formData);
-
-      if (response.ok) {
-        await fetchPosts();
-        closeModal();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert(`Error: ${errorData.detail || "Failed to save"}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        const errorData = JSON.parse(errorText);
+        alert(`Error: ${errorData.detail || errorData.error || "Failed to save"}`);
+        return;
       }
+
+      await fetchPosts();
+      closeModal();
     } catch (error) {
+      console.error('Submit error:', error);
       alert("Network error occurred");
     }
   };
@@ -337,7 +334,7 @@ export default function PostsPage() {
                     </td>
                     <td className="py-4">
                        <div className="text-sm font-medium text-gray-600">
-                         {post.view_count} <span className="text-gray-400 font-normal text-xs">views</span>
+                         {post.viewCount} <span className="text-gray-400 font-normal text-xs">views</span>
                        </div>
                     </td>
                     <td className="py-4 pr-4 text-right">

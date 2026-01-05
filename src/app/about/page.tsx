@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     description: 'Award-winning research and strategy professional with expertise in market research and product strategy.',
     type: 'website',
     locale: 'en_US',
-    images: ['/og-image.jpg'], // Add an OG image path here
+    images: ['/professional.png'], // Add an OG image path here
   },
 };
 
@@ -128,13 +128,14 @@ export default function SophiaPortfolio() {
                 
                 {/* Main Image Container */}
                 <div className="w-full h-full bg-slate-100 rounded-2xl overflow-hidden relative shadow-2xl border-[6px] border-white">
-                    <Image 
-                        src="/professional.png" // Ensure this image exists in public folder
-                        alt="Adaeze Sophia Ukoni"
-                        fill
-                        className="object-cover hover:scale-105 transition-transform duration-700 ease-in-out"
-                        priority
-                    />
+                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+                                AS
+                            </div>
+                            <p className="text-slate-600 font-medium">Professional Photo</p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Floating Award Card */}

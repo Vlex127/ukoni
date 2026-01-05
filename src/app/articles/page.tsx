@@ -14,29 +14,28 @@ import {
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { getImageUrl } from "@/lib/image";
-import { getApiUrl } from "@/lib/api";
 
 // --- Types ---
 type Author = {
-  full_name: string;
+  fullName: string;
   username?: string;
 };
 
 type Post = {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   excerpt: string;
   content: string;
   category: string;
-  featured_image: string | null;
-  featured_image_url: string | null;
-  featured_image_public_id: string | null;
+  featuredImage: string | null;
+  featuredImageUrl: string | null;
+  featuredImagePublicId: string | null;
   author: Author;
-  published_at: string;
-  read_time: number | null;
+  publishedAt: string;
+  readTime: number | null;
   status: 'draft' | 'published' | 'archived';
-  is_featured: boolean;
+  isFeatured: boolean;
   tags: string[];
 };
 
@@ -64,31 +63,23 @@ export default function ArticlesPage() {
         setIsLoading(true);
         setError(null);
         
-        // Fetch both featured and regular posts
-        const [featuredRes, latestRes] = await Promise.all([
-          fetch(getApiUrl('posts?is_featured=true&status=published&limit=1')),
-          fetch(getApiUrl('posts?status=published&limit=10'))
-        ]);
-
-        if (!featuredRes.ok || !latestRes.ok) {
+        // Fetch all published posts
+        const response = await fetch('/api/posts?status=published&limit=50');
+        
+        if (!response.ok) {
           throw new Error('Failed to fetch posts');
         }
 
-        const [featuredData, latestData] = await Promise.all([
-          featuredRes.json(),
-          latestRes.json()
-        ]);
-
-        // Combine and deduplicate posts
-        const allPosts = [...(featuredData || []), ...(latestData || [])];
-        const uniquePosts = Array.from(
-          new Map(allPosts.map(post => [post.id, post])).values()
-        );
-
-        setPosts(uniquePosts);
+        const data = await response.json();
+        
+        // Handle API response structure
+        const allPosts = Array.isArray(data) ? data : data.posts || [];
+        
+        setPosts(allPosts);
       } catch (err) {
         console.error('Error fetching posts:', err);
-        setError('Failed to load articles. Please try again later.');
+        // Don't set error message, just keep loading state
+        setError('silent_error'); // Silent error for debugging
       } finally {
         setIsLoading(false);
       }
@@ -102,8 +93,8 @@ export default function ArticlesPage() {
     return posts.filter(post => {
       const matchesSearch = 
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.author.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+        (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        post.author.fullName.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory = 
         activeCategory === "All Topics" || 
@@ -127,6 +118,23 @@ export default function ArticlesPage() {
       day: 'numeric'
     });
   };
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {[...Array(9)].map((_, i) => (
+        <div key={i} className="animate-pulse">
+          <div className="bg-gray-200 rounded-2xl aspect-[4/3] mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-full"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -215,35 +223,11 @@ export default function ArticlesPage() {
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-gray-200 rounded-2xl aspect-[4/3] mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Always show loading skeleton when loading or when no posts yet */}
+        {(isLoading || posts.length === 0) && <LoadingSkeleton />}
 
-        {/* Error State */}
-        {error && !isLoading && (
-          <div className="text-center py-20 bg-red-50 rounded-2xl">
-            <p className="text-red-600">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* No Results */}
-        {!isLoading && !error && filteredPosts.length === 0 && (
+        {/* No Results - only show when not loading and posts exist but filtered results are empty */}
+        {!isLoading && posts.length > 0 && filteredPosts.length === 0 && (
           <div className="text-center py-20 bg-gray-50 rounded-2xl">
             <p className="text-gray-500">No articles found matching your criteria.</p>
             <button
@@ -259,7 +243,7 @@ export default function ArticlesPage() {
         )}
 
         {/* Articles Grid */}
-        {!isLoading && !error && filteredPosts.length > 0 && (
+        {!isLoading && posts.length > 0 && filteredPosts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredPosts.map((post) => (
               <article key={post.id} className="group flex flex-col h-full">
@@ -268,9 +252,14 @@ export default function ArticlesPage() {
                   className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3]"
                 >
                   <img 
-                    src={post.featured_image_url || getImageUrl(post.featured_image)} 
+                    src={post.featuredImageUrl || getImageUrl(post.featuredImage)} 
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails
+                      const target = e.target as HTMLImageElement;
+                      target.src = getImageUrl('placeholder');
+                    }}
                   />
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-bold text-gray-900 shadow-sm">
                     {post.category}
@@ -280,11 +269,11 @@ export default function ArticlesPage() {
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
                     <span className="flex items-center gap-1">
-                      <Calendar size={12} /> {formatDate(post.published_at)}
+                      <Calendar size={12} /> {formatDate(post.publishedAt)}
                     </span>
-                    {post.read_time && (
+                    {post.readTime && (
                       <span className="flex items-center gap-1">
-                        <Clock size={12} /> {post.read_time} min read
+                        <Clock size={12} /> {post.readTime} min read
                       </span>
                     )}
                   </div>
@@ -302,10 +291,10 @@ export default function ArticlesPage() {
                   <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                        {post.author.full_name.charAt(0)}
+                        {post.author.fullName.charAt(0)}
                       </div>
                       <span className="text-xs font-medium text-gray-700">
-                        {post.author.full_name}
+                        {post.author.fullName}
                       </span>
                     </div>
                     {post.tags && post.tags.length > 0 && (
@@ -328,7 +317,7 @@ export default function ArticlesPage() {
         )}
 
         {/* Load More Button */}
-        {!isLoading && !error && filteredPosts.length > 0 && (
+        {!isLoading && posts.length > 0 && filteredPosts.length > 0 && (
           <div className="mt-12 text-center">
             <button className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
               Load More Articles

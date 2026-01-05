@@ -18,34 +18,44 @@ import Image from "next/image"; // Kept import
 
 // --- Configuration ---
 // Assuming these are in your project
-import { getImageUrl } from '@/lib/image'; 
-import { getApiUrl } from '@/lib/api';
+import { getImageUrl } from '@/lib/image';
 
 // --- Types ---
 type Author = {
-  full_name: string;
+  fullName: string;
   username?: string;
 };
 
 type Post = {
-  id: number;
+  id: string;
   title: string;
   slug: string;
-  excerpt: string;
-  category: string;
-  featured_image: string | null;
-  featured_image_url: string | null;
-  featured_image_public_id: string | null;
+  content: string;
+  excerpt: string | null;
+  status: string;
+  category: string | null;
+  featuredImage: string | null;
+  featuredImageUrl: string | null;
+  featuredImagePublicId: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  viewCount: number;
+  isFeatured: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
   author: Author;
-  published_at: string;
-  read_time: number | null;
-  is_featured: boolean;
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Design: 'bg-blue-100 text-blue-800',
-  Development: 'bg-green-100 text-green-800',
-  Business: 'bg-purple-100 text-purple-800',
+  Technology: 'bg-blue-100 text-blue-800',
+  Design: 'bg-purple-100 text-purple-800',
+  Culture: 'bg-pink-100 text-pink-800',
+  Productivity: 'bg-green-100 text-green-800',
+  Development: 'bg-orange-100 text-orange-800',
+  AI: 'bg-red-100 text-red-800',
+  Lifestyle: 'bg-yellow-100 text-yellow-800',
+  Business: 'bg-indigo-100 text-indigo-800',
   default: 'bg-gray-100 text-gray-800',
 };
 
@@ -77,26 +87,38 @@ export default function BlogHome() {
         setLoading(true);
         
         // 1. Fetch Featured Post
-        const featuredRes = await fetch(getApiUrl('posts?is_featured=true&status=published&limit=1'));
-        const featuredData = await featuredRes.json();
+        const featuredUrl = '/api/posts?is_featured=true&status=published&limit=1';
+        const featuredRes = await fetch(featuredUrl);
         
+        if (!featuredRes.ok) {
+          throw new Error(`Featured posts fetch failed: ${featuredRes.status} ${featuredRes.statusText}`);
+        }
+        const featuredData = await featuredRes.json();
+
         // 2. Fetch Latest Posts
-        const response = await fetch(getApiUrl('posts?status=published&limit=10')); // Increased limit for search data
+        const latestUrl = '/api/posts?status=published&limit=10';
+        const response = await fetch(latestUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Latest posts fetch failed: ${response.status} ${response.statusText}`);
+        }
         const latestData = await response.json();
 
-        if (featuredData && featuredData.length > 0) {
-          const featured = featuredData[0];
+        // Handle API response structure
+        const featuredPosts = Array.isArray(featuredData) ? featuredData : featuredData.posts || [];
+        const latestPosts = Array.isArray(latestData) ? latestData : latestData.posts || [];
+
+        if (featuredPosts.length > 0) {
+          const featured = featuredPosts[0];
           setFeaturedPost(featured);
-          setPosts(latestData.filter((p: Post) => p.id !== featured.id));
+          setPosts(latestPosts.filter((p: Post) => p.id !== featured.id));
         } else {
-          setFeaturedPost(latestData[0] || null);
-          setPosts(latestData.slice(1));
+          setFeaturedPost(latestPosts[0] || null);
+          setPosts(latestPosts.slice(1));
         }
       } catch (err) {
         console.error("Failed to fetch posts:", err);
-        // Don't set error state, just log it and let the loading state continue
-        // This will keep the skeleton loading UI visible
-        // The fetch will be retried when the component re-renders
+        setError('Failed to load posts');
       } finally {
         setLoading(false);
       }
@@ -105,7 +127,8 @@ export default function BlogHome() {
     fetchPosts();
   }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '';
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
     } catch (e) {
@@ -124,8 +147,8 @@ export default function BlogHome() {
 
     return allSearchable.filter(post => 
       post.title.toLowerCase().includes(query) || 
-      post.excerpt.toLowerCase().includes(query) ||
-      post.author.full_name.toLowerCase().includes(query)
+      (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
+      post.author.fullName.toLowerCase().includes(query)
     );
   }, [posts, featuredPost, searchQuery]);
 
@@ -146,7 +169,8 @@ export default function BlogHome() {
     setSubscribeMessage('');
     
     try {
-      const response = await fetch(getApiUrl('subscribers'), {
+      console.log('Attempting subscription with email:', email);
+      const response = await fetch('/api/subscribers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,13 +178,19 @@ export default function BlogHome() {
         body: JSON.stringify({ email }),
       });
       
-      const data = await response.json();
+      console.log('Subscription response status:', response.status);
+      console.log('Subscription response ok:', response.ok);
       
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to subscribe. Please try again.');
+        const errorText = await response.text();
+        console.error('Subscription error response:', errorText);
+        throw new Error(errorText || 'Failed to subscribe. Please try again.');
       }
       
-      setSubscribeMessage('Thank you for subscribing! You\'ll hear from us soon.');
+      const data = await response.json();
+      console.log('Subscription success data:', data);
+      
+      setSubscribeMessage(data.message || 'Thank you for subscribing! You\'ll hear from us soon.');
       setEmail('');
     } catch (error) {
       console.error('Subscription error:', error);
@@ -237,10 +267,10 @@ export default function BlogHome() {
                   className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group"
                 >
                   {/* Thumbnail (Optional) */}
-                  {post.featured_image && (
+                  {post.featuredImageUrl && (
                      <div className="w-16 h-16 relative flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
                         <img 
-                          src={post.featured_image_url || getImageUrl(post.featured_image)} 
+                          src={post.featuredImageUrl} 
                           alt="" 
                           className="w-full h-full object-cover"
                         />
@@ -252,11 +282,11 @@ export default function BlogHome() {
                       {post.title}
                     </h4>
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                       <span className={`${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.default} px-1.5 py-0.5 rounded`}>
-                         {post.category}
+                       <span className={`${CATEGORY_COLORS[post.category || ''] || CATEGORY_COLORS.default} px-1.5 py-0.5 rounded`}>
+                         {post.category || 'Uncategorized'}
                        </span>
                        <span>•</span>
-                       <span>{formatDate(post.published_at)}</span>
+                       <span>{formatDate(post.publishedAt)}</span>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-600 mt-2" />
@@ -428,22 +458,28 @@ export default function BlogHome() {
                 <div className="group relative grid md:grid-cols-12 gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 hover:shadow-xl transition-all duration-300 border border-gray-100">
                   {/* Image Side */}
                   <div className="md:col-span-7 h-64 md:h-[400px] relative overflow-hidden rounded-2xl">
-                    <img 
-                      src={featuredPost.featured_image_url || getImageUrl(featuredPost.featured_image)} 
-                      alt={featuredPost.title}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {featuredPost.featuredImageUrl ? (
+                      <img 
+                        src={featuredPost.featuredImageUrl} 
+                        alt={featuredPost.title}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <FileText size={48} className="text-gray-400" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Content Side */}
                   <div className="md:col-span-5 flex flex-col gap-4">
                     <div className="flex items-center gap-3 mb-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${CATEGORY_COLORS[featuredPost.category] || CATEGORY_COLORS.default}`}>
-                        {featuredPost.category}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${CATEGORY_COLORS[featuredPost.category || ''] || CATEGORY_COLORS.default}`}>
+                        {featuredPost.category || 'Uncategorized'}
                       </span>
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Clock size={12} />
-                        {featuredPost.read_time || 5} min read
+                        5 min read
                       </span>
                     </div>
 
@@ -454,17 +490,17 @@ export default function BlogHome() {
                     </Link>
                     
                     <p className="text-gray-600 line-clamp-3">
-                      {featuredPost.excerpt}
+                      {featuredPost.excerpt || 'Discover insights and ideas in this featured article.'}
                     </p>
 
                     <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
-                          {featuredPost.author.full_name.charAt(0)}
+                          {featuredPost.author.fullName.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">{featuredPost.author.full_name}</p>
-                          <p className="text-xs text-gray-500">{formatDate(featuredPost.published_at)}</p>
+                          <p className="text-sm font-semibold text-gray-900">{featuredPost.author.fullName}</p>
+                          <p className="text-xs text-gray-500">{formatDate(featuredPost.publishedAt)}</p>
                         </div>
                       </div>
                       <Link href={`/articles/${featuredPost.slug}`} className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 text-gray-500 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white transition-all">
@@ -511,21 +547,27 @@ export default function BlogHome() {
                   <article key={post.id} className="group flex flex-col h-full">
                     {/* Image */}
                     <Link href={`/articles/${post.slug}`} className="block overflow-hidden rounded-2xl mb-4 aspect-[4/3]">
-                      <img 
-                        src={post.featured_image_url || getImageUrl(post.featured_image)} 
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+                      {post.featuredImageUrl ? (
+                        <img 
+                          src={post.featuredImageUrl} 
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <FileText size={48} className="text-gray-400" />
+                        </div>
+                      )}
                     </Link>
 
                     {/* Content */}
                     <div className="flex flex-col flex-grow">
                       <div className="flex items-center gap-3 mb-3 text-xs">
-                        <span className={`px-2 py-1 rounded-md font-medium ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.default}`}>
-                          {post.category}
+                        <span className={`px-2 py-1 rounded-md font-medium ${CATEGORY_COLORS[post.category || ''] || CATEGORY_COLORS.default}`}>
+                          {post.category || 'Uncategorized'}
                         </span>
                         <span className="text-gray-400">•</span>
-                        <span className="text-gray-500">{formatDate(post.published_at)}</span>
+                        <span className="text-gray-500">{formatDate(post.publishedAt)}</span>
                       </div>
 
                       <Link href={`/articles/${post.slug}`} className="mb-3 block">
@@ -535,15 +577,15 @@ export default function BlogHome() {
                       </Link>
 
                       <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-grow">
-                        {post.excerpt}
+                        {post.excerpt || 'Read this article to discover more insights and ideas.'}
                       </p>
 
                       {/* Author Mini */}
                       <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
                         <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
-                          {post.author.full_name.charAt(0)}
+                          {post.author.fullName.charAt(0)}
                         </div>
-                        <span className="text-xs font-medium text-gray-900">{post.author.full_name}</span>
+                        <span className="text-xs font-medium text-gray-900">{post.author.fullName}</span>
                       </div>
                     </div>
                   </article>

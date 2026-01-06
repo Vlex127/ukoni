@@ -22,20 +22,20 @@ import { toast } from 'sonner';
 
 // --- TYPES ---
 type Author = {
-  full_name: string;
+  fullName: string;
   avatar_url?: string;
 };
 
 export type Post = {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
   category: string;
-  featured_image: string | null;
-  featured_image_url: string | null;
+  featuredImage: string | null;
+  featuredImageUrl: string | null;
   author: Author;
-  published_at: string;
+  publishedAt: string;
   likes_count?: number; 
 };
 
@@ -59,9 +59,10 @@ export default function ArticlePage() {
   React.useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await fetch(getApiUrl(`api/v1/posts/slug/${slug}`), { cache: 'no-store' });
+        const response = await fetch(`/api/posts/${slug}`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
+          console.log('Post data received:', data);
           setPost(data);
         } else {
           notFound();
@@ -101,8 +102,8 @@ export default function ArticlePage() {
 
   if (!post) return notFound();
 
-  const imageUrl = post.featured_image_url || (post.featured_image ? getImageUrl(post.featured_image) : null);
-  const authorName = post.author?.full_name || 'Ukoni Author';
+  const imageUrl = post.featuredImageUrl || (post.featuredImage ? getImageUrl(post.featuredImage) : null);
+  const authorName = post.author?.fullName || 'Ukoni Author';
 
   return (
     <div className="min-h-screen bg-[#F3F2EF]">
@@ -146,7 +147,7 @@ export default function ArticlePage() {
                         <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                             <span>{post.category}</span>
                             <span>•</span>
-                            <span>{formatDistanceToNow(new Date(post.published_at))} ago</span>
+                            <span>{formatDistanceToNow(new Date(post.publishedAt))} ago</span>
                             <span>•</span>
                             <Globe size={12} />
                         </div>

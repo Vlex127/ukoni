@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
     const comment = await prisma.comment.create({
       data: {
         ...validatedData,
-        ipAddress: request.ip || '127.0.0.1',
+        ipAddress: request.headers.get('x-forwarded-for') || 
+                   request.headers.get('x-real-ip') || 
+                   '127.0.0.1',
         userAgent: request.headers.get('user-agent') || '',
       },
       include: {

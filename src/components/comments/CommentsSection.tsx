@@ -46,7 +46,7 @@ type Comment = {
 };
 
 interface CommentsSectionProps {
-  postId: number;
+  postId: string;
 }
 
 // --- Utilities ---

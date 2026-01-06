@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           username: user.username,
-          fullName: user.fullName,
+          name: user.fullName || null,
         }
       }
     })
@@ -52,18 +52,18 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.username = user.username
-        token.fullName = user.fullName
+        token.name = (user as any).fullName || null
       }
       return token
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.username = token.username as string
-        session.user.fullName = token.fullName as string
-      }
-      return session
-    }
+async session({ session, token }) {
+  if (token) {
+    session.user.id = token.id as string
+    session.user.username = token.username as string
+    session.user.name = (token as any).name as string // Changed from fullName to name
+  }
+  return session
+},
   },
   pages: {
     signIn: '/login',

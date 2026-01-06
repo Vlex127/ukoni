@@ -63,7 +63,7 @@ export default function SophiaPortfolio() {
                 <Linkedin size={20} /> Connect on LinkedIn
             </a>
             <a 
-              href="mailto:contact@example.com"
+              href="mailto:ukonisophia@gmail.com"
               className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-full font-bold hover:bg-slate-50 hover:border-slate-300 transition-all duration-300"
             >
                 Get in Touch
@@ -236,7 +236,7 @@ export default function SophiaPortfolio() {
                             I am always open to discussing new opportunities in product strategy, market research, and speaking engagements.
                         </p>
                         <div className="flex flex-col gap-3">
-                             <a href="mailto:contact@example.com" className="group w-full flex items-center justify-center gap-2 bg-white text-slate-900 font-bold py-3.5 rounded-lg hover:bg-blue-50 transition-colors">
+                             <a href="mailto:ukonisophia@gmail.com" className="group w-full flex items-center justify-center gap-2 bg-white text-slate-900 font-bold py-3.5 rounded-lg hover:bg-blue-50 transition-colors">
                                 <span className="group-hover:-translate-y-0.5 transition-transform">Get in Touch</span>
                                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                             </a>
@@ -260,7 +260,7 @@ export default function SophiaPortfolio() {
           <div className="flex gap-6 mt-4 md:mt-0">
              <a href="https://www.linkedin.com/in/adaeze-sophia-ukoni-1b6704a5" className="p-2 bg-slate-100 rounded-full text-slate-600 hover:bg-blue-600 hover:text-white transition-all"><Linkedin size={18} /></a>
              <a href="https://www.instagram.com/ukoni_sophia" className="p-2 bg-slate-100 rounded-full text-slate-600 hover:bg-pink-600 hover:text-white transition-all"><Instagram size={18}/></a>
-             <a href="mailto:contact@example.com" className="p-2 bg-slate-100 rounded-full text-slate-600 hover:bg-slate-900 hover:text-white transition-all"><Briefcase size={18}/></a>
+             <a href="mailto:ukonisophia@gmail.com" className="p-2 bg-slate-100 rounded-full text-slate-600 hover:bg-slate-900 hover:text-white transition-all"><Briefcase size={18}/></a>
           </div>
       </footer>
 

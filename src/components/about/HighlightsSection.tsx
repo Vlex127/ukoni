@@ -60,7 +60,7 @@ export const HighlightsSection = () => (
             Interested in collaborating on a project or learning more about my approach to research and strategy?
           </p>
           <a 
-            href="mailto:hello@adaezeukoni.com" 
+            href="mailto:ukonisophia@gmail.com" 
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200"
           >
             Get in Touch

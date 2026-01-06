@@ -358,7 +358,7 @@ export default function BlogHome() {
             Discover stories that <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-400">ignite</span> your creativity.
           </h1>
           <p className="text-lg text-gray-500 mb-8 leading-relaxed">
-            Ukoni is a community of writers, developers, and creators sharing insights on technology, design, and digital well-being.
+            A personal blog by Ukoni Sophia sharing insights on technology, design, and digital well-being.
           </p>
         </section>
 

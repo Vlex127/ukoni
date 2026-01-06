@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
     const mockData = {
       current_period: {
         total_visitors: analytics.length || 45,
-        page_visitors: analytics.filter(a => a.event === 'page_view').length || 32,
-        comment_visitors: analytics.filter(a => a.event === 'comment').length || 13
+        page_visitors: analytics.filter((a: any) => a.event === 'page_view').length || 32,
+        comment_visitors: analytics.filter((a: any) => a.event === 'comment').length || 13
       },
       previous_period: {
         total_visitors: 38,

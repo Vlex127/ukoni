@@ -71,7 +71,7 @@ export default function AdminLayout({
         {/* Brand */}
         <div className="mb-10">
           <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <span className="text-white font-bold text-xl">B</span>
+            <span className="text-white font-bold text-xl">S</span>
           </div>
         </div>
 

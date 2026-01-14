@@ -194,7 +194,7 @@ export default function ArticlesPage() {
             </div>
             <input
               type="text"
-              placeholder="Search articles, topics, or authors..."
+              placeholder="Search articles, topics or posts... "
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-gray-200 shadow-lg shadow-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-gray-900"

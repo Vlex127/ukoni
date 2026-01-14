@@ -233,7 +233,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="text-center lg:text-left">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">{session?.user?.username || 'Admin'}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">{session?.user?.username || 'Sophia Ukoni'}</h2>
               <p className="text-gray-400 text-sm mb-4">Writer/Author</p>
             </div>
 

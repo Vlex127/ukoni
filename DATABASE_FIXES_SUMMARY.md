@@ -60,13 +60,13 @@ sqlite3.OperationalError) no such table: analytics
 ```json
 {
   "current_period": [
-    {"date": "2025-12-04", "count": 0},
-    {"date": "2025-12-05", "count": 0},
+    {"date": "2026-12-04", "count": 0},
+    {"date": "2026-12-05", "count": 0},
     // ... more dates
   ],
   "previous_period": [
-    {"date": "2025-11-04", "count": 0},
-    {"date": "2025-11-05", "count": 0},
+    {"date": "2026-11-04", "count": 0},
+    {"date": "2026-11-05", "count": 0},
     // ... more dates  
   ]
 }

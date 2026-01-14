@@ -129,12 +129,10 @@ export default function SophiaPortfolio() {
                 {/* Main Image Container */}
                 <div className="w-full h-full bg-slate-100 rounded-2xl overflow-hidden relative shadow-2xl border-[6px] border-white">
                     <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-                                AS
-                            </div>
-                            <p className="text-slate-600 font-medium">Professional Photo</p>
-                        </div>
+                        <img 
+                          src = "/professional.png" 
+                          alt="Sophia Ukoni" 
+                          className="w-full h-full object-cover" />
                     </div>
                 </div>
 
@@ -255,7 +253,7 @@ export default function SophiaPortfolio() {
           <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
             <span className="font-bold text-slate-700">Adaeze Sophia Ukoni</span>
             <span className="hidden md:inline text-slate-300">|</span>
-            <p>© 2025 All rights reserved.</p>
+            <p>© 2026 All rights reserved.</p>
           </div>
           <div className="flex gap-6 mt-4 md:mt-0">
              <a href="https://www.linkedin.com/in/adaeze-sophia-ukoni-1b6704a5" className="p-2 bg-slate-100 rounded-full text-slate-600 hover:bg-blue-600 hover:text-white transition-all"><Linkedin size={18} /></a>

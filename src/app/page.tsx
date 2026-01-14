@@ -637,10 +637,10 @@ export default function BlogHome() {
              Ukoni
           </div>
           <div className="text-sm text-gray-500">
-            &copy; 2025 Ukoni Inc. All rights reserved.
+            &copy; 2026 Ukoni Inc. All rights reserved.
           </div>
           <div className="flex gap-6 text-gray-400 items-center">
-            <a href=""><Linkedin className="w-5 h-5 hover:text-gray-900 cursor-pointer transition" /></a>
+            <a href="https://www.linkedin.com/in/adaeze-sophia-ukoni-1b6704a5"><Linkedin className="w-5 h-5 hover:text-gray-900 cursor-pointer transition" /></a>
             <a href="https://www.instagram.com/ukoni_sophia"><Instagram size={20} className="hover:text-pink-600 cursor-pointer transition" /></a>
            
           </div>

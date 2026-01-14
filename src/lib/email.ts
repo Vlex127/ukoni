@@ -197,7 +197,7 @@ class EmailService {
               <a href="https://ukoni.com">Website</a>
             </div>
             <p style="margin-top: 20px; font-size: 12px;">
-              © 2025 Ukoni Inc. All rights reserved.<br>
+              © 2026 Ukoni Inc. All rights reserved.<br>
               If you no longer wish to receive these emails, you can unsubscribe at any time.
             </p>
           </div>

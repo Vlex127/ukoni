@@ -56,6 +56,7 @@ interface DashboardStats {
 export default function AdminDashboard() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalPosts: 0,
     totalComments: 0,
@@ -211,10 +212,23 @@ export default function AdminDashboard() {
         {/* Profile Card (Span 4) */}
         <div className="col-span-1 lg:col-span-4 mt-8 lg:mt-12">
           <div className="bg-white rounded-2xl p-4 sm:p-6 relative border border-gray-100 shadow-sm h-full flex flex-col">
-            {/* Profile Image - More compact */}
+            {/* Profile Image - More compact and optimized */}
             <div className="flex justify-center lg:justify-start mb-4">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-200 relative overflow-hidden shadow-lg">
-                <Image src="/professional.png" alt="Profile" fill className="object-cover" priority />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-100 relative overflow-hidden shadow-lg">
+                {imageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <div className="w-8 h-8 bg-blue-200 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+                <Image 
+                  src="/professional.png" 
+                  alt="Profile" 
+                  fill 
+                  className="object-cover" 
+                  priority
+                  onLoadingComplete={() => setImageLoading(false)}
+                  unoptimized={false}
+                />
               </div>
             </div>
 
@@ -382,6 +396,7 @@ function BlogItem({
 }: BlogItemProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
     if (featuredImageUrl) setImageUrl(featuredImageUrl);
@@ -397,14 +412,26 @@ function BlogItem({
         {/* Thumbnail */}
         <div className="w-12 h-12 sm:w-14 sm:h-16 rounded-xl bg-gray-200 flex-shrink-0 relative overflow-hidden">
           {imageUrl && !imageError ? (
-            <Image 
-              src={imageUrl}
-              alt={title}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              onError={() => setImageError(true)}
-              unoptimized={imageUrl.startsWith('http')}
-            />
+            <>
+              {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <div className="w-4 h-4 bg-blue-200 rounded animate-pulse"></div>
+                </div>
+              )}
+              <Image 
+                src={imageUrl}
+                alt={title}
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
+                onError={() => {
+                  setImageError(true);
+                  setImageLoading(false);
+                }}
+                onLoadingComplete={() => setImageLoading(false)}
+                unoptimized={imageUrl.startsWith('http')}
+                sizes="(max-width: 640px) 48px, (max-width: 768px) 56px, 64px"
+              />
+            </>
           ) : (
             <div className={`w-full h-full ${color} flex items-center justify-center`}>
               <span className="text-sm sm:text-lg font-bold opacity-40">{title.charAt(0)}</span>

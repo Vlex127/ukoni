@@ -12,6 +12,8 @@ import {
   FileText,
   MessageCircle,
   Plus,
+  Users,
+  Eye,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -207,22 +209,21 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         
         {/* Profile Card (Span 4) */}
-        <div className="col-span-1 lg:col-span-4 mt-16 sm:mt-20 lg:mt-12">
-          <div className="bg-white rounded-[2rem] p-4 sm:p-6 relative border border-gray-100 shadow-sm h-full flex flex-col justify-end">
-            {/* Profile Image - Popping out */}
-            <div className="absolute -top-16 sm:-top-20 left-1/2 -translate-x-1/2 lg:left-auto lg:right-4 lg:translate-x-0 w-32 h-36 sm:w-40 sm:h-44 md:w-48 md:h-52">
-               <div className="w-full h-full relative drop-shadow-xl">
-                  {/* Using standard img for reliability with external assets, or stick to Next Image */}
-                  <Image src="/professional.png" alt="Profile" fill className="object-contain" priority />
-               </div>
+        <div className="col-span-1 lg:col-span-4 mt-8 lg:mt-12">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 relative border border-gray-100 shadow-sm h-full flex flex-col">
+            {/* Profile Image - More compact */}
+            <div className="flex justify-center lg:justify-start mb-4">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-200 relative overflow-hidden shadow-lg">
+                <Image src="/professional.png" alt="Profile" fill className="object-cover" priority />
+              </div>
             </div>
 
-            <div className="mt-16 sm:mt-20 lg:mt-4 text-center lg:text-left">
+            <div className="text-center lg:text-left">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">{session?.user?.username || 'Admin'}</h2>
-              <p className="text-gray-400 text-sm">Writer/Author</p>
+              <p className="text-gray-400 text-sm mb-4">Writer/Author</p>
             </div>
 
-            <div className="flex justify-center lg:justify-start gap-6 sm:gap-8 mt-6 sm:mt-8 pb-2">
+            <div className="flex justify-center lg:justify-start gap-6 sm:gap-8 mt-auto">
               <div className="text-center lg:text-left">
                 <span className="text-xl sm:text-2xl font-bold text-gray-800 block">{stats.userPosts}</span>
                 <span className="text-gray-400 text-xs uppercase tracking-wider">Posts</span>
@@ -264,32 +265,34 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Bottom Row: Chart + Blog List */}
+      {/* Bottom Row: Visitor Stats + Blog List */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
         
-        {/* Chart Section (Span 7) */}
-        <div className="col-span-1 xl:col-span-7 bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm min-h-[350px]">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+        {/* Visitor Stats Section (Span 7) */}
+        <div className="col-span-1 xl:col-span-7 bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-800">Visitors Analytics</h3>
+              <h3 className="text-base sm:text-lg font-bold text-gray-800">Visitor Analytics</h3>
+              <p className="text-gray-500 text-sm mt-1">Today's visitor count</p>
             </div>
-            {/* Chart Legend */}
-            <div className="flex items-center gap-3 sm:gap-4 text-xs text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span> Current
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span> Previous
-              </div>
-            </div>
+            <Link 
+              href="/admin/analytics"
+              className="flex items-center gap-1 text-blue-600 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"
+            >
+              View Details
+            </Link>
           </div>
           
-          <div className="h-[250px] sm:h-[300px] w-full">
-            <VisitorsChart 
-              data={visitorData} 
-              loading={isLoading} 
-              error={error} 
-            />
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Eye size={32} className="text-blue-600" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-gray-800">
+                {visitorData.currentPeriod[0]?.count || 0}
+              </div>
+              <p className="text-gray-500 text-sm mt-2">Visitors Today</p>
+            </div>
           </div>
         </div>
 

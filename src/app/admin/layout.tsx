@@ -9,7 +9,7 @@ import {
   FileText, 
   MessageSquare, 
   Users, 
-  Settings, 
+  BarChart3, 
   LogOut, 
   Menu, 
   X 
@@ -103,10 +103,10 @@ export default function AdminLayout({
             label="Users"
           />
           <SidebarIcon 
-            icon={<Settings size={22} />} 
-            href="/admin/settings" 
-            active={pathname === "/admin/settings"} 
-            label="Settings"
+            icon={<BarChart3 size={22} />} 
+            href="/admin/analytics" 
+            active={pathname === "/admin/analytics"} 
+            label="Analytics"
           />
         </nav>
 

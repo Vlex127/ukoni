@@ -7,8 +7,7 @@ import { useEffect, useState } from "react";
 import { 
   LayoutGrid, 
   FileText, 
-  MessageSquare, 
-  Users, 
+  MessageSquare,
   BarChart3, 
   LogOut, 
   Menu, 
@@ -96,12 +95,7 @@ export default function AdminLayout({
             active={pathname === "/admin/comments"} 
             label="Comments"
           />
-          <SidebarIcon 
-            icon={<Users size={22} />} 
-            href="/admin/users" 
-            active={pathname === "/admin/users"} 
-            label="Users"
-          />
+ 
           <SidebarIcon 
             icon={<BarChart3 size={22} />} 
             href="/admin/analytics" 

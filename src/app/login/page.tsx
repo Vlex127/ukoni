@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { LoginForm } from "@/components/auth/login-form"
-
+import { Spinner } from "@/components/ui/spinner"
 export default function LoginPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -22,7 +22,9 @@ export default function LoginPage() {
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">
+          <Spinner />
+          </div>
       </div>
     )
   }

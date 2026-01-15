@@ -2,7 +2,7 @@ import { getApiUrl } from './api';
 
 export async function apiClient<T>(
   endpoint: string,
-  { body, method = 'GET', ...customConfig }: RequestInit & { body?: any } = {}
+  options: { body?: any; method?: string; headers?: Record<string, string> } & Omit<RequestInit, 'body' | 'method' | 'headers'> = {}
 ): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
   
@@ -11,9 +11,9 @@ export async function apiClient<T>(
   });
 
   // Add custom headers
-  if (customConfig.headers) {
-    Object.entries(customConfig.headers).forEach(([key, value]) => {
-      headers.append(key, value as string);
+  if (options.headers) {
+    Object.entries(options.headers).forEach(([key, value]) => {
+      headers.append(key, value);
     });
   }
 
@@ -22,13 +22,13 @@ export async function apiClient<T>(
   }
 
   const config: RequestInit = {
-    method,
-    ...customConfig,
+    method: options.method || 'GET',
+    ...options,
     headers,
   };
 
-  if (body) {
-    config.body = JSON.stringify(body);
+  if (options.body) {
+    config.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
   }
 
   try {

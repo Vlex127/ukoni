@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -9,7 +7,7 @@ const commentSchema = z.object({
   authorName: z.string().min(1),
   authorEmail: z.string().email(),
   content: z.string().min(1),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -57,17 +55,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
+    console.log('Received comment data:', body)
+    
     const validatedData = commentSchema.parse(body)
+    console.log('Validated comment data:', validatedData)
 
     const comment = await prisma.comment.create({
       data: {
@@ -91,8 +83,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(comment, { status: 201 })
   } catch (error) {
     console.error('Comments POST error:', error)
+    if (error instanceof z.ZodError) {
+      console.error('Validation errors:', error.issues)
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.issues },
+        { status: 400 }
+      )
+    }
+    console.error('Database error details:', error)
     return NextResponse.json(
-      { error: 'Failed to create comment' },
+      { error: 'Failed to create comment', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

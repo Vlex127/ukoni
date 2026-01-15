@@ -31,17 +31,28 @@ const commentSchema = z.object({
   authorName: z.string().min(2, 'Name must be at least 2 characters'),
   authorEmail: z.string().email('Please enter a valid email'),
   content: z.string().min(3, 'Comment must be at least 3 characters'),
-  parentId: z.number().optional(),
+  parentId: z.string().optional(),
 });
 
 type Comment = {
-  id: number;
-  post_id: number;
-  author_name: string;
-  author_email: string;
+  id: string;
+  postId: string;
+  authorName: string;
+  authorEmail: string;
   content: string;
-  created_at: string;
-  parent_id: number | null;
+  status: string;
+  parentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  post?: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+  parent?: {
+    id: string;
+    authorName: string;
+  };
   replies: Comment[];
 };
 
@@ -73,10 +84,10 @@ const CommentSkeleton = () => (
 
 export function CommentsSection({ postId }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ id: number; name: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isApiAvailable, setIsApiAvailable] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -92,7 +103,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
       authorName: '',
       authorEmail: '',
       content: '',
-      parentId: undefined as undefined | number,
+      parentId: undefined as undefined | string,
     },
   });
 
@@ -106,7 +117,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
 
     const fetchComments = async () => {
       try {
-        const data = await apiClient<Comment[]>(`/comments?postId=${postId}&include_replies=true`);
+        const data = await apiClient<Comment[]>(`/comments?postId=${postId}&includeReplies=true`);
         setComments(data);
         setIsApiAvailable(true);
         setRetryCount(0); // Reset retry count on success
@@ -130,16 +141,13 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
     try {
       const newComment = await apiClient<Comment>('/comments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           postId: postId,
           authorName: data.authorName,
           authorEmail: data.authorEmail,
           content: data.content,
-          parentId: replyTo?.id || null,
-        }),
+          parentId: replyTo?.id ? String(replyTo.id) : undefined,
+        },
       });
       
       // Update logic...
@@ -181,9 +189,9 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
     }, 100);
   };
 
-  const handleReplyClick = (commentId: number, authorName: string) => {
+  const handleReplyClick = (commentId: string, authorName: string) => {
     if (!isApiAvailable) return;
-    setReplyTo({ id: commentId, name: authorName });
+    setReplyTo({ id: commentId, authorName: authorName } as Comment);
     setIsFormVisible(true);
     
     setTimeout(() => {
@@ -196,19 +204,21 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
     <div className={`relative ${depth > 0 ? 'mt-4' : 'mt-6'}`}>
       <div className="flex gap-4 group">
         <Avatar className="w-10 h-10 border-2 border-white shadow-sm shrink-0 z-10">
-          <AvatarFallback style={{ backgroundColor: stringToColor(comment.author_name) }} className="text-gray-700 font-semibold">
-            {comment.author_name.charAt(0).toUpperCase()}
+          <AvatarFallback style={{ backgroundColor: stringToColor(comment.authorName || '') }} className="text-gray-700 font-semibold">
+            {comment.authorName?.charAt(0).toUpperCase() || '?'}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-sm text-gray-900">{comment.author_name}</span>
-            <span className="text-xs text-gray-500">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
+            <span className="font-semibold text-sm text-gray-900">{comment.authorName}</span>
+            <time className="text-xs text-gray-500" dateTime={comment.createdAt}>
+              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+            </time>
           </div>
           <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</div>
           <div className="mt-2">
             <button 
-              onClick={() => handleReplyClick(comment.id, comment.author_name)}
+              onClick={() => handleReplyClick(comment.id, comment.authorName)}
               className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
             >
               <Reply className="w-3.5 h-3.5" /> Reply
@@ -254,7 +264,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
                 {replyTo ? (
                   <span className="flex items-center gap-2 text-blue-700">
                     <CornerDownRight className="w-4 h-4" />
-                    Replying to <span className="font-bold">{replyTo.name}</span>
+                    Replying to <span className="font-bold">{replyTo.authorName}</span>
                   </span>
                 ) : (
                   'Write a new comment'
@@ -289,7 +299,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
                 </div>
 
                 <Textarea 
-                  placeholder={replyTo ? `Replying to ${replyTo.name}...` : "What are your thoughts?"} 
+                  placeholder={replyTo ? `Replying to ${replyTo.authorName}...` : "What are your thoughts?"} 
                   className="min-h-[120px] resize-y" 
                   {...register('content')} 
                   disabled={isSubmitting} 

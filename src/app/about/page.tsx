@@ -1,4 +1,6 @@
-import { Metadata } from 'next';
+"use client"
+import Link from 'next/link';
+import { useState } from 'react';
 import {
   Globe,
   Briefcase,
@@ -11,27 +13,49 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-  Building2
+  Building2,
+  Menu,
+  X
 } from "lucide-react";
 import Image from "next/image";
 
-export const metadata: Metadata = {
-  title: 'About Adaeze Sophia Ukoni | Research & Strategy Professional',
-  description: 'Award-winning research and strategy professional with expertise in market research, user experience, and product strategy. Currently leading research at Moniepoint.',
-  keywords: ['market research', 'product strategy', 'user experience', 'fintech', 'Moniepoint', 'Transsion', 'Kantar'],
-  openGraph: {
-    title: 'Adaeze Sophia Ukoni | Research & Strategy Professional',
-    description: 'Award-winning research and strategy professional with expertise in market research and product strategy.',
-    type: 'website',
-    locale: 'en_US',
-    images: ['/professional.png'], // Add an OG image path here
-  },
-};
-
 export default function SophiaPortfolio() {
+const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   return (
     <div className="bg-white min-h-screen font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
-      
+            <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <Sparkles size={16} fill="currentColor" />
+            </div>
+            Ukoni
+          </Link>
+
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+            <Link href="/" className="hover:text-blue-600 transition">Home</Link>
+            <Link href="/articles" className="text-gray-900">Articles</Link>
+            <Link href="/about" className="hover:text-blue-600 transition">About</Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button 
+              className="md:hidden p-2 text-gray-900 hover:bg-gray-100 rounded-full transition" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-100 shadow-xl px-6 py-8 flex flex-col gap-6 z-40 animate-in slide-in-from-top-2">
+            <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link href="/articles" onClick={() => setIsMobileMenuOpen(false)}>Articles</Link>
+            <Link href="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
+          </div>
+        )}
+      </nav>
       {/* --- Hero Section --- */}
       <section className="relative pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden">
         {/* Background Texture */}

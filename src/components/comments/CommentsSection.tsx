@@ -28,10 +28,10 @@ import {
 // --- Types & Schema ---
 
 const commentSchema = z.object({
-  author_name: z.string().min(2, 'Name must be at least 2 characters'),
-  author_email: z.string().email('Please enter a valid email'),
+  authorName: z.string().min(2, 'Name must be at least 2 characters'),
+  authorEmail: z.string().email('Please enter a valid email'),
   content: z.string().min(3, 'Comment must be at least 3 characters'),
-  parent_id: z.number().optional(),
+  parentId: z.number().optional(),
 });
 
 type Comment = {
@@ -74,11 +74,11 @@ const CommentSkeleton = () => (
 export function CommentsSection({ postId }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // UI State: Controls visibility of the form
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [replyTo, setReplyTo] = useState<{ id: number; name: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApiAvailable, setIsApiAvailable] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   const {
     register,
@@ -89,36 +89,56 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
   } = useForm({
     resolver: zodResolver(commentSchema),
     defaultValues: {
-      author_name: '',
-      author_email: '',
+      authorName: '',
+      authorEmail: '',
       content: '',
-      parent_id: undefined as undefined | number,
+      parentId: undefined as undefined | number,
     },
   });
 
   useEffect(() => {
+    // Prevent infinite retries if API is unavailable
+    if (retryCount >= 3) {
+      setIsApiAvailable(false);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchComments = async () => {
       try {
-        const data = await apiClient<Comment[]>(`/api/v1/comments?post_id=${postId}&include_replies=true`);
+        const data = await apiClient<Comment[]>(`/comments?postId=${postId}&include_replies=true`);
         setComments(data);
+        setIsApiAvailable(true);
+        setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error('Error fetching comments:', error);
+        setRetryCount(prev => prev + 1);
+        // Immediately set API as unavailable for connection errors
+        if ((error as any).isConnectionError || retryCount >= 2) {
+          setIsApiAvailable(false);
+        }
+        setComments([]);
       } finally {
         setIsLoading(false);
       }
     };
     fetchComments();
-  }, [postId]);
+  }, [postId, retryCount]);
 
   const onSubmit = async (data: z.infer<typeof commentSchema>) => {
     setIsSubmitting(true);
     try {
-      const newComment = await apiClient<Comment>('/api/v1/comments', {
+      const newComment = await apiClient<Comment>('/comments', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          ...data,
-          post_id: postId,
-          parent_id: replyTo?.id || null,
+          postId: postId,
+          authorName: data.authorName,
+          authorEmail: data.authorEmail,
+          content: data.content,
+          parentId: replyTo?.id || null,
         }),
       });
       
@@ -144,22 +164,25 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
       setIsFormVisible(false); // Hide form after success
       toast.success('Comment posted successfully!');
     } catch (error) {
-      toast.error('Failed to post comment.');
+      console.error('Comment submission error:', error);
+      toast.error('Failed to post comment. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleOpenForm = () => {
+    if (!isApiAvailable) return;
     setReplyTo(null);
     setIsFormVisible(true);
     setTimeout(() => {
         document.getElementById('comment-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setFocus('author_name');
+        setFocus('authorName');
     }, 100);
   };
 
   const handleReplyClick = (commentId: number, authorName: string) => {
+    if (!isApiAvailable) return;
     setReplyTo({ id: commentId, name: authorName });
     setIsFormVisible(true);
     
@@ -255,13 +278,13 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input placeholder="Your Name" className="pl-9" {...register('author_name')} disabled={isSubmitting} />
-                    {errors.author_name && <p className="text-red-500 text-xs mt-1">{errors.author_name.message}</p>}
+                    <Input placeholder="Your Name" className="pl-9" {...register('authorName')} disabled={isSubmitting} />
+                    {errors.authorName && <p className="text-red-500 text-xs mt-1">{errors.authorName.message}</p>}
                   </div>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input placeholder="Your Email" className="pl-9" {...register('author_email')} disabled={isSubmitting} />
-                    {errors.author_email && <p className="text-red-500 text-xs mt-1">{errors.author_email.message}</p>}
+                    <Input placeholder="Your Email" className="pl-9" {...register('authorEmail')} disabled={isSubmitting} />
+                    {errors.authorEmail && <p className="text-red-500 text-xs mt-1">{errors.authorEmail.message}</p>}
                   </div>
                 </div>
 
@@ -298,6 +321,23 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
           [1, 2, 3].map(i => <CommentSkeleton key={i} />)
         ) : comments.length > 0 ? (
           comments.map(comment => <RecursiveComment key={comment.id} comment={comment} />)
+        ) : !isApiAvailable ? (
+          <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">Comments are temporarily unavailable</p>
+              <p className="text-gray-400 text-sm mt-1">Please check back later</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setRetryCount(0);
+                  setIsApiAvailable(true);
+                }}
+                className="mt-4"
+              >
+                Retry
+              </Button>
+          </div>
         ) : (
           !isFormVisible && (
             <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">

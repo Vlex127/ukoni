@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { getImageUrl } from "@/lib/image";
 
 // --- Types ---
@@ -55,6 +56,30 @@ export default function ArticlesPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("All Topics");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Image loading states
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  // Image loading helpers
+  const handleImageLoad = (imageId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [imageId]: false }));
+  };
+
+  const handleImageError = (imageId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [imageId]: false }));
+    setImageErrors(prev => ({ ...prev, [imageId]: true }));
+  };
+
+  const isImageLoading = (imageId: string) => imageLoadingStates[imageId] === true;
+  const hasImageError = (imageId: string) => imageErrors[imageId] === true;
+
+  // Initialize loading state for image
+  const initializeImageLoading = (imageId: string) => {
+    if (!imageLoadingStates[imageId] && !imageErrors[imageId]) {
+      setImageLoadingStates(prev => ({ ...prev, [imageId]: true }));
+    }
+  };
 
   // Fetch posts from API
   useEffect(() => {
@@ -251,21 +276,47 @@ export default function ArticlesPage() {
                   href={`/articles/${post.slug}`} 
                   className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3]"
                 >
-                  <img 
-                    src={post.featuredImageUrl || getImageUrl(post.featuredImage)} 
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails
-                      const target = e.target as HTMLImageElement;
-                      target.src = getImageUrl('placeholder');
-                    }}
-                  />
+                  {post.featuredImageUrl ? (
+                    <>
+                      {(() => {
+                        const imageId = `articles-${post.id}`;
+                        initializeImageLoading(imageId);
+                        return isImageLoading(imageId);
+                      })() && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                          <div className="w-8 h-8 bg-blue-200 rounded-lg animate-pulse"></div>
+                        </div>
+                      )}
+                      <div className="relative w-full h-full">
+                        <Image 
+                          src={getImageUrl(post.featuredImageUrl, {
+                            width: 400,
+                            height: 300,
+                            quality: 75,
+                            format: 'auto',
+                            crop: 'fill'
+                          })}
+                          alt={post.title}
+                          fill
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onLoad={() => handleImageLoad(`articles-${post.id}`)}
+                          onError={() => handleImageError(`articles-${post.id}`)}
+                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 400px"
+                          loading="lazy"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                      <div className="text-gray-400 text-4xl font-bold">
+                        {post.title.charAt(0)}
+                      </div>
+                    </div>
+                  )}
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-bold text-gray-900 shadow-sm">
                     {post.category}
                   </div>
                 </Link>
-
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
                     <span className="flex items-center gap-1">
@@ -287,7 +338,7 @@ export default function ArticlesPage() {
                   <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
                     {post.excerpt}
                   </p>
-
+                  
                   <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
@@ -315,15 +366,11 @@ export default function ArticlesPage() {
             ))}
           </div>
         )}
-
-        {/* Load More Button */}
-        {!isLoading && posts.length > 0 && filteredPosts.length > 0 && (
-          <div className="mt-12 text-center">
-            <button className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
-              Load More Articles
-            </button>
-          </div>
-        )}
+        <div className="mt-12 text-center">
+          <button className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
+            Load More Articles
+          </button>
+        </div>
       </main>
 
       {/* Footer */}

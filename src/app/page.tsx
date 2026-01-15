@@ -14,11 +14,11 @@ import {
   FileText
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image"; // Kept import
+import Image from "next/image";
 
 // --- Configuration ---
 // Assuming these are in your project
-import { getImageUrl } from '@/lib/image';
+import { getImageUrl, generateBlurDataURL } from '@/lib/image';
 
 // --- Types ---
 type Author = {
@@ -269,10 +269,15 @@ export default function BlogHome() {
                   {/* Thumbnail (Optional) */}
                   {post.featuredImageUrl && (
                      <div className="w-16 h-16 relative flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
-                        <img 
-                          src={post.featuredImageUrl} 
+                        <Image 
+                          src={getImageUrl(post.featuredImageUrl, { width: 64, height: 64, quality: 75 })} 
                           alt="" 
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                          loading="lazy"
+                          placeholder="blur"
+                          blurDataURL={generateBlurDataURL(64, 64)}
                         />
                      </div>
                   )}
@@ -358,7 +363,7 @@ export default function BlogHome() {
             Discover stories that <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-400">ignite</span> your creativity.
           </h1>
           <p className="text-lg text-gray-500 mb-8 leading-relaxed">
-            A personal blog by Ukoni Sophia sharing insights on technology, design, and digital well-being.
+            A personal blog by Ukoni Sophia sharing insights on lifestyle, faith based walk, and digital well-being.
           </p>
         </section>
 
@@ -459,10 +464,15 @@ export default function BlogHome() {
                   {/* Image Side */}
                   <div className="md:col-span-7 h-64 md:h-[400px] relative overflow-hidden rounded-2xl">
                     {featuredPost.featuredImageUrl ? (
-                      <img 
-                        src={featuredPost.featuredImageUrl} 
+                      <Image 
+                        src={getImageUrl(featuredPost.featuredImageUrl, { width: 800, height: 600, quality: 85 })} 
                         alt={featuredPost.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 58vw, 58vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        priority
+                        placeholder="blur"
+                        blurDataURL={generateBlurDataURL(800, 600)}
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -546,12 +556,17 @@ export default function BlogHome() {
                   posts.map((post) => (
                   <article key={post.id} className="group flex flex-col h-full">
                     {/* Image */}
-                    <Link href={`/articles/${post.slug}`} className="block overflow-hidden rounded-2xl mb-4 aspect-[4/3]">
+                    <Link href={`/articles/${post.slug}`} className="block overflow-hidden rounded-2xl mb-4 aspect-[4/3] relative">
                       {post.featuredImageUrl ? (
-                        <img 
-                          src={post.featuredImageUrl} 
+                        <Image 
+                          src={getImageUrl(post.featuredImageUrl, { width: 400, height: 300, quality: 80 })} 
                           alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                          placeholder="blur"
+                          blurDataURL={generateBlurDataURL(400, 300)}
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">

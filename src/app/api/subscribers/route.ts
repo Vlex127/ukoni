@@ -12,7 +12,7 @@ const subscriberSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
         createdAt: 'desc'
       }
     })
+
+    console.log(`API: Found ${subscribers.length} active subscribers`);
 
     return NextResponse.json(subscribers)
   } catch (error) {
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
       console.log('Attempting to send welcome email to new subscriber:', validatedData.email)
       try {
         const emailSent = await emailService.sendWelcomeEmail(validatedData.email)
-        
+
         if (emailSent) {
           console.log('Welcome email sent successfully to:', validatedData.email)
         } else {

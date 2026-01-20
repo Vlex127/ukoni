@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com'),
 };
 
+import { Suspense } from "react";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,6 +23,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
+          <Suspense fallback={null}>
+            <AnalyticsTracker />
+          </Suspense>
           {children}
         </Providers>
       </body>

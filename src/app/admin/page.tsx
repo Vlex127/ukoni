@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   ];
 
   useEffect(() => {
-     if (session) fetchDashboardData();
+    if (session) fetchDashboardData();
   }, [session]);
 
   useEffect(() => {
@@ -94,12 +94,12 @@ export default function AdminDashboard() {
       try {
         const headers = new Headers({ "Content-Type": "application/json" });
         const response = await fetch('/api/analytics', { headers });
-        
+
         if (!response.ok) throw new Error('Failed to fetch visitor data');
-        
+
         const data = await response.json();
         const today = new Date().toISOString().split('T')[0];
-        
+
         setVisitorData({
           currentPeriod: [{
             date: today,
@@ -121,12 +121,17 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchDashboardData = async () => {
+    if (!session) {
+      console.warn("AdminDashboard: No session available, aborting fetch.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const postsUrl = "/api/posts";
-      const commentsUrl = "/api/comments";
-      const subscribersUrl = "/api/subscribers";
-      
+      const postsUrl = getApiUrl("posts");
+      const commentsUrl = getApiUrl("comments");
+      const subscribersUrl = getApiUrl("subscribers");
+
       const [postsRes, commentsRes, subsRes] = await Promise.all([
         fetch(postsUrl), fetch(commentsUrl), fetch(subscribersUrl)
       ]);
@@ -136,13 +141,13 @@ export default function AdminDashboard() {
       const subsData = await subsRes.json();
 
       const postsArray = Array.isArray(postsData) ? postsData : postsData.posts || [];
-      
+
       setStats({
         totalPosts: postsArray.length,
         totalComments: Array.isArray(commentsData) ? commentsData.length : 0,
         totalViews: postsArray.reduce((acc: number, post: Post) => acc + (post.viewCount || 0), 0),
         userPosts: postsArray.filter((p: Post) => p.authorId === session?.user?.id).length,
-        subscribers: subsData.count || 0
+        subscribers: Array.isArray(subsData) ? subsData.length : (subsData.count || 0)
       });
 
       setRecentPosts(postsArray.slice(0, 4));
@@ -158,39 +163,39 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <Spinner/>
+        <Spinner />
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 md:gap-8 pb-10">
-      
+
       {/* Top Header */}
       <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-4">
         {/* Left Side: Page Title or Breadcrumb */}
         <div className="flex flex-col">
-           <span className="text-gray-400 text-xs font-medium">Pages / Dashboard</span>
-           <h2 className="text-lg sm:text-xl font-bold text-gray-800">Main Dashboard</h2>
+          <span className="text-gray-400 text-xs font-medium">Pages / Dashboard</span>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800">Main Dashboard</h2>
         </div>
 
         {/* Right Side Actions */}
         <div className="flex items-center justify-between sm:justify-end gap-4">
           <div className="hidden md:flex items-center gap-2 text-xs md:text-sm text-gray-500 bg-white px-3 py-2 rounded-xl border border-gray-100 shadow-sm">
             <CalendarDays size={16} />
-            <span className="whitespace-nowrap">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric'})}</span>
+            <span className="whitespace-nowrap">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="relative cursor-pointer bg-white p-2 rounded-full shadow-sm hover:shadow-md transition">
               <Bell size={18} className="text-gray-400 hover:text-gray-600 transition" />
               <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
             </div>
-            
+
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-200 overflow-hidden relative border-2 border-white shadow-sm">
-              <img 
-                src={`https://ui-avatars.com/api/?name=${session?.user?.username}&background=random`} 
-                alt="Profile" 
+              <img
+                src={`https://ui-avatars.com/api/?name=${session?.user?.username}&background=random`}
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -200,80 +205,73 @@ export default function AdminDashboard() {
 
       {/* Welcome Message */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
-          Welcome Back! <span className="animate-wave">👋</span>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+          Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{session?.user?.username || 'Writer'}</span> <span className="animate-bounce">👋</span>
         </h1>
         <p className="text-gray-500 text-sm">Here is what's happening with your blog today.</p>
       </div>
 
       {/* Main Grid: Profile + Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-        
+
         {/* Profile Card (Span 4) */}
-        <div className="col-span-1 lg:col-span-4 mt-8 lg:mt-12">
-          <div className="bg-white rounded-2xl p-4 sm:p-6 relative border border-gray-100 shadow-sm h-full flex flex-col">
-            {/* Profile Image - More compact and optimized */}
-            <div className="flex justify-center lg:justify-start mb-4">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-100 relative overflow-hidden shadow-lg">
-                {imageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                    <div className="w-8 h-8 bg-blue-200 rounded-full animate-pulse"></div>
+        <div className="col-span-1 lg:col-span-4 mt-6 lg:mt-6">
+          <div className="bg-white rounded-[2rem] p-6 relative border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col items-center text-center lg:items-start lg:text-left">
+            {/* Profile Image */}
+            <div className="mb-6 relative">
+              <div className="w-24 h-24 rounded-2xl bg-gray-50 p-1 shadow-inner">
+                <div className="w-full h-full rounded-xl overflow-hidden relative">
+                  {/* Fallback or real image logic can go here - simplified for demo */}
+                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold text-3xl">
+                    <img src="/professional.png" alt="Sophia Ukoni" />
                   </div>
-                )}
-                <Image 
-                  src="/professional.png" 
-                  alt="Profile" 
-                  fill 
-                  className="object-cover" 
-                  priority
-                  onLoadingComplete={() => setImageLoading(false)}
-                  unoptimized={false}
-                />
-              </div>
-            </div>
-
-            <div className="text-center lg:text-left">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">{session?.user?.username || 'Sophia Ukoni'}</h2>
-              <p className="text-gray-400 text-sm mb-4">Writer/Author</p>
-            </div>
-
-            <div className="flex justify-center lg:justify-start gap-6 sm:gap-8 mt-auto">
-              <div className="text-center lg:text-left">
-                <span className="text-xl sm:text-2xl font-bold text-gray-800 block">{stats.userPosts}</span>
-                <span className="text-gray-400 text-xs uppercase tracking-wider">Posts</span>
-              </div>
-              <div className="text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start gap-1">
-                  <span className="text-xl sm:text-2xl font-bold text-gray-800">{stats.subscribers}</span>
                 </div>
-                <span className="text-gray-400 text-xs uppercase tracking-wider">Subscribers</span>
+              </div>
+              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">
+                Online
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{session?.user?.username || 'Sophia Ukoni'}</h2>
+              <p className="text-gray-400 text-sm font-medium">Writer & Content Creator</p>
+            </div>
+
+            <div className="w-full grid grid-cols-2 gap-4 mt-auto">
+              <div className="bg-blue-50 p-4 rounded-2xl text-center">
+                <span className="text-2xl font-bold text-blue-600 block mb-1">{stats.userPosts}</span>
+                <span className="text-blue-400 text-xs font-bold uppercase tracking-wider">Posts</span>
+              </div>
+              <div className="bg-indigo-50 p-4 rounded-2xl text-center">
+                <span className="text-2xl font-bold text-indigo-600 block mb-1">{stats.subscribers}</span>
+                <span className="text-indigo-400 text-xs font-bold uppercase tracking-wider">Subs</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Stats Cards (Span 8) */}
-        <div className="col-span-1 lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-0 lg:mt-12">
-          <StatCard 
-            icon={<BookOpen size={20} />} 
-            label="Total Posts" 
-            value={stats.totalPosts} 
-            color="text-blue-500" 
-            bg="bg-blue-100" 
+        <div className="col-span-1 lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mt-0 lg:mt-6 cursor-default">
+          <StatCard
+            icon={<BookOpen size={24} />}
+            label="Total Posts"
+            value={stats.totalPosts}
+            color="text-blue-600"
+            bg="bg-blue-50"
           />
-          <StatCard 
-            icon={<FileText size={20} />} 
-            label="Total Pages" 
-            value={stats.totalPosts} // Assuming pages logic
-            color="text-pink-500" 
-            bg="bg-pink-100" 
+          <StatCard
+            icon={<FileText size={24} />}
+            label="Published"
+            value={stats.totalPosts}
+            color="text-indigo-600"
+            bg="bg-indigo-50"
           />
-          <StatCard 
-            icon={<MessageCircle size={20} />} 
-            label="Total Comments" 
-            value={stats.totalComments} 
-            color="text-teal-500" 
-            bg="bg-teal-100" 
+          <StatCard
+            icon={<MessageCircle size={24} />}
+            label="Comments"
+            value={stats.totalComments}
+            color="text-emerald-600"
+            bg="bg-emerald-50"
             link="/admin/comments"
           />
         </div>
@@ -281,7 +279,7 @@ export default function AdminDashboard() {
 
       {/* Bottom Row: Visitor Stats + Blog List */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
-        
+
         {/* Visitor Stats Section (Span 7) */}
         <div className="col-span-1 xl:col-span-7 bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-6">
@@ -289,14 +287,14 @@ export default function AdminDashboard() {
               <h3 className="text-base sm:text-lg font-bold text-gray-800">Visitor Analytics</h3>
               <p className="text-gray-500 text-sm mt-1">Today's visitor count</p>
             </div>
-            <Link 
+            <Link
               href="/admin/analytics"
               className="flex items-center gap-1 text-blue-600 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"
             >
               View Details
             </Link>
           </div>
-          
+
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -314,7 +312,7 @@ export default function AdminDashboard() {
         <div className="col-span-1 xl:col-span-5 bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm flex flex-col">
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg font-bold text-gray-800">Recent Blogs</h3>
-            <Link 
+            <Link
               href="/admin/posts"
               className="flex items-center gap-1 text-blue-600 text-xs font-medium px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"
             >
@@ -340,7 +338,7 @@ export default function AdminDashboard() {
               ))
             ) : (
               <div className="flex flex-col items-center justify-center h-32 sm:h-40 text-gray-400 text-sm">
-                <FileText size={28} className="mb-2 opacity-50"/>
+                <FileText size={28} className="mb-2 opacity-50" />
                 <p>No recent posts found</p>
               </div>
             )}
@@ -354,18 +352,18 @@ export default function AdminDashboard() {
 // --- Sub Components ---
 
 const StatCard = ({ icon, label, value, color, bg, link }: any) => (
-  <div className="bg-white rounded-2xl p-5 flex flex-col justify-between border border-gray-100 shadow-sm hover:shadow-md transition-all group relative">
-    <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center ${color} mb-4`}>
+  <div className={`bg-white rounded-[2rem] p-6 flex flex-col justify-between border border-gray-100 shadow-sm hover:shadow-lg hover:translate-y-[-4px] transition-all duration-300 group relative ${link ? 'cursor-pointer' : ''}`}>
+    <div className={`w-12 h-12 ${bg} rounded-2xl flex items-center justify-center ${color} mb-6 group-hover:scale-110 transition-transform`}>
       {icon}
     </div>
     <div>
-      <span className="text-gray-400 text-xs font-medium uppercase tracking-wide block mb-1">
+      <span className="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-1">
         {label}
       </span>
-      <span className={`text-2xl font-bold ${color}`}>{value}</span>
+      <span className={`text-3xl font-bold ${color}`}>{value}</span>
     </div>
     {link && (
-       <Link href={link} className="absolute inset-0 z-10" aria-label={`View ${label}`} />
+      <Link href={link} className="absolute inset-0 z-10" aria-label={`View ${label}`} />
     )}
   </div>
 );
@@ -401,8 +399,8 @@ function BlogItem({
   useEffect(() => {
     if (featuredImageUrl) setImageUrl(featuredImageUrl);
     else if (featuredImage) {
-        const cleanPath = featuredImage.replace(/^\/+/, '');
-        setImageUrl(getApiUrl(cleanPath)); 
+      const cleanPath = featuredImage.replace(/^\/+/, '');
+      setImageUrl(getApiUrl(cleanPath));
     }
   }, [featuredImage, featuredImageUrl]);
 
@@ -418,7 +416,7 @@ function BlogItem({
                   <div className="w-4 h-4 bg-blue-200 rounded animate-pulse"></div>
                 </div>
               )}
-              <Image 
+              <Image
                 src={imageUrl}
                 alt={title}
                 fill
@@ -438,7 +436,7 @@ function BlogItem({
             </div>
           )}
         </div>
-        
+
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-1 mb-1">
             <div className="flex items-start justify-between gap-2">
@@ -454,21 +452,21 @@ function BlogItem({
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <span className="flex items-center gap-1">
-              <CalendarDays size={10} /> 
-              {createdAt ? new Date(createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : ''}
+              <CalendarDays size={10} />
+              {createdAt ? new Date(createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
             </span>
             <span className="flex items-center gap-1">
-               <div className="w-1 h-1 bg-gray-400 rounded-full" />
-               {views} Views
+              <div className="w-1 h-1 bg-gray-400 rounded-full" />
+              {views} Views
             </span>
           </div>
         </div>
       </div>
-      
-      <Link 
+
+      <Link
         href={`/admin/posts/${slug}`}
         className="ml-2 p-1.5 sm:p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
       >

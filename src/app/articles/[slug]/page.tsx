@@ -2,22 +2,24 @@
 
 import React, { useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  MoreHorizontal, 
-  ThumbsUp, 
-  MessageSquare, 
-  Share2, 
+import Image from 'next/image';
+import {
+  ArrowLeft,
+  MoreHorizontal,
+  ThumbsUp,
+  MessageSquare,
+  Share2,
   Globe,
+  Clock,
+  Calendar,
   Copy
 } from 'lucide-react';
 import Link from 'next/link';
-import { getApiUrl } from '@/lib/api';
-import { getImageUrl } from '@/lib/image';
+import { getImageUrl, generateBlurDataURL } from '@/lib/image';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 
 // --- TYPES ---
@@ -34,15 +36,24 @@ export type Post = {
   category: string;
   featuredImage: string | null;
   featuredImageUrl: string | null;
+  featuredImagePublicId: string | null;
   author: Author;
   publishedAt: string;
-  likes_count?: number; 
+  likes_count?: number;
+  readTime?: number; // Optional read time
 };
 
 // --- LOADING SKELETON ---
 const PostSkeleton = () => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-pulse">
-    <div className="p-4 h-96 bg-gray-200" />
+  <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse space-y-8">
+    <div className="h-8 bg-gray-200 rounded-lg w-1/3" />
+    <div className="h-12 bg-gray-200 rounded-lg w-3/4" />
+    <div className="h-[400px] bg-gray-200 rounded-2xl" />
+    <div className="space-y-4">
+      <div className="h-4 bg-gray-200 rounded w-full" />
+      <div className="h-4 bg-gray-200 rounded w-full" />
+      <div className="h-4 bg-gray-200 rounded w-2/3" />
+    </div>
   </div>
 );
 
@@ -51,18 +62,22 @@ export default function ArticlePage() {
   const slug = params.slug as string;
   const [post, setPost] = React.useState<Post | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  
-  // Local interaction state (Guest mode - resets on refresh)
+  const [showSkeleton, setShowSkeleton] = React.useState(false); // Delayed skeleton state
+
   const [isLiked, setIsLiked] = React.useState(false);
   const commentsRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
+    // Timer to delay the skeleton display
+    const timer = setTimeout(() => {
+      setShowSkeleton(true);
+    }, 200); // 200ms delay before showing skeleton
+
     const fetchPost = async () => {
       try {
         const response = await fetch(`/api/posts/${slug}`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
-          console.log('Post data received:', data);
           setPost(data);
         } else {
           notFound();
@@ -71,9 +86,12 @@ export default function ArticlePage() {
         console.error(error);
       } finally {
         setIsLoading(false);
+        clearTimeout(timer); // Clear timer if fetch finishes early
       }
     };
     fetchPost();
+
+    return () => clearTimeout(timer); // Cleanup
   }, [slug]);
 
   const handleScrollToComments = () => {
@@ -85,7 +103,6 @@ export default function ArticlePage() {
     toast.success("Link copied to clipboard");
   };
 
-  // Utility for avatar colors
   const stringToColor = (str: string) => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -93,144 +110,163 @@ export default function ArticlePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#F3F2EF] pt-20 pb-10">
-        <div className="max-w-[700px] mx-auto px-4"><PostSkeleton /></div>
-      </div>
-    );
+    // Only show skeleton if the delay threshold has passed
+    if (showSkeleton) {
+      return (
+        <div className="min-h-screen bg-white">
+          <PostSkeleton />
+        </div>
+      );
+    }
+    // Otherwise show nothing (or a very minimal spinner if preferred, but user implied no skeleton)
+    return <div className="min-h-screen bg-white" />;
   }
 
   if (!post) return notFound();
 
-  const imageUrl = post.featuredImageUrl || (post.featuredImage ? getImageUrl(post.featuredImage) : null);
+  const imageSource = post.featuredImageUrl || post.featuredImage;
   const authorName = post.author?.fullName || 'Ukoni Author';
+  const publishedDate = post.publishedAt ? new Date(post.publishedAt) : new Date();
 
   return (
-    <div className="min-h-screen bg-[#F3F2EF]">
-      {/* --- Sticky Navbar (Public / Guest View) --- */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm px-4 h-14 flex items-center justify-between">
-         <div className="max-w-6xl w-full mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <Link href="/articles" className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
-                    <ArrowLeft size={20} />
-                </Link>
-                <Link href="/" className="font-bold text-xl text-blue-700 tracking-tight">
-                    Ukoni
-                </Link>
-            </div>
-            {/* No User Profile here - Just a generic action or empty */}
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" className="hidden md:flex text-gray-600 font-medium">
-                    All Articles
-                </Button>
-            </div>
-         </div>
+    <div className="min-h-screen bg-white">
+      {/* --- Sticky Navbar --- */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 h-16 flex items-center justify-between">
+        <div className="max-w-4xl w-full mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/articles" className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
+              <ArrowLeft size={20} />
+            </Link>
+            <Link href="/" className="font-bold text-xl text-blue-700 tracking-tight hidden sm:block">
+              Ukoni
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={handleShare} className="text-gray-600">
+              <Share2 size={18} />
+            </Button>
+          </div>
+        </div>
       </nav>
 
-      <main className="max-w-[700px] mx-auto py-6 px-0 md:px-4">
-        <article className="bg-white md:rounded-xl border-y md:border border-gray-200 shadow-sm overflow-hidden">
-            
-            {/* 1. Header (Author Info) */}
-            <header className="p-4 flex items-start justify-between">
-                <div className="flex gap-3">
-                    <Avatar className="w-12 h-12 border border-gray-100 cursor-default">
-                        <AvatarImage src={post.author.avatar_url} />
-                        <AvatarFallback style={{ backgroundColor: stringToColor(authorName) }} className="text-gray-700 font-bold">
-                            {authorName.charAt(0)}
-                        </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex flex-col justify-center">
-                        <h3 className="font-bold text-gray-900 leading-tight">
-                            {authorName}
-                        </h3>
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                            <span>{post.category}</span>
-                            <span>•</span>
-                            <span>{formatDistanceToNow(new Date(post.publishedAt))} ago</span>
-                            <span>•</span>
-                            <Globe size={12} />
-                        </div>
-                    </div>
-                </div>
+      <main className="max-w-3xl mx-auto py-8 md:py-12 px-4 md:px-6">
+        <article className="flex flex-col gap-8">
 
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 rounded-full h-8 w-8">
-                    <MoreHorizontal size={20} />
-                </Button>
-            </header>
-
-            {/* 2. Content */}
-            <div className="px-4 pb-2">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 leading-snug">
-                    {post.title}
-                </h1>
-                <div 
-                    className="prose prose-slate max-w-none text-gray-800 text-[15px] leading-relaxed mb-4"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                />
+          {/* 1. Header & Meta */}
+          <header className="space-y-6">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-600 mb-4">
+              <span className="bg-blue-50 px-3 py-1 rounded-full">
+                {post.category || 'Article'}
+              </span>
             </div>
 
-            {/* 3. Image */}
-            {imageUrl && (
-                <div className="w-full bg-gray-100 border-t border-gray-100">
-                    <img src={imageUrl} alt={post.title} className="w-full h-auto object-cover max-h-[600px]" />
-                </div>
-            )}
+            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 leading-tight tracking-tight">
+              {post.title}
+            </h1>
 
-            {/* 4. Social Counts */}
-            <div className="px-4 py-3 flex items-center justify-between text-xs text-gray-500 border-b border-gray-100">
-                <div className="flex items-center gap-1">
-                   {isLiked && (
-                       <div className="bg-blue-500 rounded-full p-1 text-white fade-in zoom-in duration-200">
-                          <ThumbsUp size={10} fill="white" />
-                       </div>
-                   )}
-                   <span className="hover:text-blue-600 hover:underline cursor-pointer">
-                       {isLiked ? (post.likes_count || 0) + 1 : (post.likes_count || 0)} likes
-                   </span>
+            <div className="flex items-center justify-between border-b border-gray-100 pb-8">
+              <div className="flex items-center gap-4">
+                <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
+                  <AvatarImage src={post.author.avatar_url} />
+                  <AvatarFallback style={{ backgroundColor: stringToColor(authorName) }} className="text-gray-700 font-bold">
+                    {authorName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div>
+                  <p className="font-bold text-gray-900 text-sm">{authorName}</p>
+                  <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12} />
+                      {format(publishedDate, 'MMM d, yyyy')}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={12} />
+                      {post.readTime || 5} min read
+                    </span>
+                  </div>
                 </div>
-                <div className="hover:text-blue-600 hover:underline cursor-pointer" onClick={handleScrollToComments}>
-                    Comments
+              </div>
+
+              <div className="flex gap-2">
+                {/* Action buttons could go here */}
+              </div>
+            </div>
+          </header>
+
+          {/* 2. Featured Image */}
+          {imageSource && (
+            <div className="relative w-full aspect-[16/9] md:aspect-[2/1] rounded-2xl overflow-hidden bg-gray-100 shadow-sm my-2">
+              <Image
+                src={getImageUrl(imageSource, { width: 1200, height: 630, quality: 90 })}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority={true}
+                placeholder="blur"
+                blurDataURL={generateBlurDataURL(800, 400)}
+                sizes="(max-width: 768px) 100vw, 1200px"
+              />
+            </div>
+          )}
+
+          {/* 3. Content */}
+          <div
+            className="prose prose-lg md:prose-xl prose-slate max-w-none 
+                prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-900
+                prose-p:text-gray-700 prose-p:leading-relaxed
+                prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+                prose-img:rounded-xl prose-img:shadow-sm"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+
+          {/* 4. Interaction Bar (Sticky Bottom on Mobile?) - Keeping inline for now but styled better */}
+          <div className="border-y border-gray-100 py-6 my-8 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => setIsLiked(!isLiked)}
+                className={`flex items-center gap-2 text-sm font-medium transition-colors ${isLiked ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                <div className={`p-2 rounded-full ${isLiked ? 'bg-blue-50' : 'bg-gray-100'}`}>
+                  <ThumbsUp size={20} className={isLiked ? "fill-blue-600" : ""} />
                 </div>
+                <span>{isLiked ? (post.likes_count || 0) + 1 : (post.likes_count || 0)} Likes</span>
+              </button>
+
+              <button
+                onClick={handleScrollToComments}
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <div className="p-2 rounded-full bg-gray-100">
+                  <MessageSquare size={20} />
+                </div>
+                <span>Comments</span>
+              </button>
             </div>
 
-            {/* 5. Action Bar */}
-            <div className="px-2 py-1 flex items-center justify-between">
-                <Button 
-                    variant="ghost" 
-                    className={`flex-1 gap-2 hover:bg-gray-100 rounded-md py-6 transition-all ${isLiked ? 'text-blue-600 font-semibold' : 'text-gray-600 font-medium'}`}
-                    onClick={() => setIsLiked(!isLiked)}
-                >
-                    <ThumbsUp size={18} className={isLiked ? "fill-blue-600" : ""} />
-                    Like
-                </Button>
-                
-                <Button 
-                    variant="ghost" 
-                    className="flex-1 gap-2 text-gray-600 font-medium hover:bg-gray-100 rounded-md py-6"
-                    onClick={handleScrollToComments}
-                >
-                    <MessageSquare size={18} />
-                    Comment
-                </Button>
-                
-                <Button 
-                    variant="ghost" 
-                    className="flex-1 gap-2 text-gray-600 font-medium hover:bg-gray-100 rounded-md py-6"
-                    onClick={handleShare}
-                >
-                    <Share2 size={18} />
-                    Share
-                </Button>
+            <div className="flex gap-2">
+              <button onClick={handleShare} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                <Copy size={20} />
+              </button>
             </div>
+          </div>
 
-            {/* 6. Comments Integration */}
-            <div ref={commentsRef} className="bg-gray-50/50 border-t border-gray-200 px-4 pt-2 pb-6">
-                <CommentsSection postId={post.id} />
-            </div>
+          {/* 5. Comments Section */}
+          <div id="comments" ref={commentsRef} className="bg-gray-50 rounded-2xl p-6 md:p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Discussion</h3>
+            <CommentsSection postId={post.id} />
+          </div>
 
         </article>
       </main>
+
+      {/* Footer (Simplified) */}
+      <footer className="border-t border-gray-100 mt-12 py-12 bg-gray-50">
+        <div className="max-w-3xl mx-auto px-6 text-center text-gray-500 text-sm">
+          &copy; {new Date().getFullYear()} Ukoni. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }

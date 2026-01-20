@@ -14,12 +14,12 @@ import {
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { getImageUrl } from "@/lib/image";
+import { getImageUrl, generateBlurDataURL } from "@/lib/image";
 
 // --- Types ---
 type Author = {
   fullName: string;
-  username?: string;
+  avatar_url?: string;
 };
 
 type Post = {
@@ -57,49 +57,25 @@ export default function ArticlesPage() {
   const [activeCategory, setActiveCategory] = useState("All Topics");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Image loading states
-  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-
-  // Image loading helpers
-  const handleImageLoad = (imageId: string) => {
-    setImageLoadingStates(prev => ({ ...prev, [imageId]: false }));
-  };
-
-  const handleImageError = (imageId: string) => {
-    setImageLoadingStates(prev => ({ ...prev, [imageId]: false }));
-    setImageErrors(prev => ({ ...prev, [imageId]: true }));
-  };
-
-  const isImageLoading = (imageId: string) => imageLoadingStates[imageId] === true;
-  const hasImageError = (imageId: string) => imageErrors[imageId] === true;
-
-  // Initialize loading state for image
-  const initializeImageLoading = (imageId: string) => {
-    if (!imageLoadingStates[imageId] && !imageErrors[imageId]) {
-      setImageLoadingStates(prev => ({ ...prev, [imageId]: true }));
-    }
-  };
-
   // Fetch posts from API
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // Fetch all published posts
         const response = await fetch('/api/posts?status=published&limit=50');
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch posts');
         }
 
         const data = await response.json();
-        
+
         // Handle API response structure
         const allPosts = Array.isArray(data) ? data : data.posts || [];
-        
+
         setPosts(allPosts);
       } catch (err) {
         console.error('Error fetching posts:', err);
@@ -116,13 +92,13 @@ export default function ArticlesPage() {
   // Filter posts based on search and category
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
-      const matchesSearch = 
+      const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
         post.author.fullName.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesCategory = 
-        activeCategory === "All Topics" || 
+      const matchesCategory =
+        activeCategory === "All Topics" ||
         post.category === activeCategory;
 
       return matchesSearch && matchesCategory;
@@ -180,8 +156,8 @@ export default function ArticlesPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button 
-              className="md:hidden p-2 text-gray-900 hover:bg-gray-100 rounded-full transition" 
+            <button
+              className="md:hidden p-2 text-gray-900 hover:bg-gray-100 rounded-full transition"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -236,11 +212,10 @@ export default function ArticlesPage() {
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition ${
-                  activeCategory === category
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition ${activeCategory === category
                     ? "bg-gray-900 text-white"
                     : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {category}
               </button>
@@ -270,100 +245,90 @@ export default function ArticlesPage() {
         {/* Articles Grid */}
         {!isLoading && posts.length > 0 && filteredPosts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredPosts.map((post) => (
-              <article key={post.id} className="group flex flex-col h-full">
-                <Link 
-                  href={`/articles/${post.slug}`} 
-                  className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3]"
-                >
-                  {post.featuredImageUrl ? (
-                    <>
-                      {(() => {
-                        const imageId = `articles-${post.id}`;
-                        initializeImageLoading(imageId);
-                        return isImageLoading(imageId);
-                      })() && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                          <div className="w-8 h-8 bg-blue-200 rounded-lg animate-pulse"></div>
+            {filteredPosts.map((post) => {
+              const imageSource = post.featuredImageUrl || post.featuredImage;
+
+              return (
+                <article key={post.id} className="group flex flex-col h-full">
+                  <Link
+                    href={`/articles/${post.slug}`}
+                    className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3] bg-gray-100"
+                  >
+                    {imageSource ? (
+                      <Image
+                        src={getImageUrl(imageSource, {
+                          width: 400,
+                          height: 300,
+                          quality: 75,
+                          format: 'auto',
+                          crop: 'fill'
+                        })}
+                        alt={post.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 400px"
+                        placeholder="blur"
+                        blurDataURL={generateBlurDataURL(400, 300)}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <div className="text-gray-400 text-4xl font-bold">
+                          {post.title.charAt(0)}
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-bold text-gray-900 shadow-sm z-10">
+                      {post.category}
+                    </div>
+                  </Link>
+                  <div className="flex-1 flex flex-col">
+                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} /> {formatDate(post.publishedAt)}
+                      </span>
+                      {post.readTime && (
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} /> {post.readTime} min read
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition leading-snug">
+                      <Link href={`/articles/${post.slug}`}>
+                        {post.title}
+                      </Link>
+                    </h3>
+
+                    <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+
+                    <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                          {post.author.fullName.charAt(0)}
+                        </div>
+                        <span className="text-xs font-medium text-gray-700">
+                          {post.author.fullName}
+                        </span>
+                      </div>
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex gap-1">
+                          {post.tags.slice(0, 2).map((tag, i) => (
+                            <span
+                              key={i}
+                              className="text-[10px] bg-gray-50 text-gray-500 px-2 py-1 rounded-md border border-gray-100"
+                            >
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       )}
-                      <div className="relative w-full h-full">
-                        <Image 
-                          src={getImageUrl(post.featuredImageUrl, {
-                            width: 400,
-                            height: 300,
-                            quality: 75,
-                            format: 'auto',
-                            crop: 'fill'
-                          })}
-                          alt={post.title}
-                          fill
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onLoad={() => handleImageLoad(`articles-${post.id}`)}
-                          onError={() => handleImageError(`articles-${post.id}`)}
-                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 400px"
-                          loading="lazy"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                      <div className="text-gray-400 text-4xl font-bold">
-                        {post.title.charAt(0)}
-                      </div>
                     </div>
-                  )}
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-bold text-gray-900 shadow-sm">
-                    {post.category}
                   </div>
-                </Link>
-                <div className="flex-1 flex flex-col">
-                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                    <span className="flex items-center gap-1">
-                      <Calendar size={12} /> {formatDate(post.publishedAt)}
-                    </span>
-                    {post.readTime && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} /> {post.readTime} min read
-                      </span>
-                    )}
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition leading-snug">
-                    <Link href={`/articles/${post.slug}`}>
-                      {post.title}
-                    </Link>
-                  </h3>
-                  
-                  <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
-                    {post.excerpt}
-                  </p>
-                  
-                  <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                        {post.author.fullName.charAt(0)}
-                      </div>
-                      <span className="text-xs font-medium text-gray-700">
-                        {post.author.fullName}
-                      </span>
-                    </div>
-                    {post.tags && post.tags.length > 0 && (
-                      <div className="flex gap-1">
-                        {post.tags.slice(0, 2).map((tag, i) => (
-                          <span 
-                            key={i} 
-                            className="text-[10px] bg-gray-50 text-gray-500 px-2 py-1 rounded-md border border-gray-100"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
         <div className="mt-12 text-center">
@@ -385,7 +350,7 @@ export default function ArticlesPage() {
             </div>
             <div className="flex gap-6">
               <Link href="/about" className="text-gray-600 hover:text-gray-900">About</Link>
- 
+
               <Link href="mailto:ukonisophia@gmail.com" className="text-gray-600 hover:text-gray-900">Contact</Link>
             </div>
           </div>

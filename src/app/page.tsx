@@ -6,7 +6,7 @@ import {
   Search,
   Sparkles,
   Instagram,
-  Menu, 
+  Menu,
   Linkedin,
   ArrowRight,
   Clock,
@@ -67,7 +67,17 @@ export default function BlogHome() {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [subscribeMessage, setSubscribeMessage] = useState('');
-  
+
+  // Delayed loading skeleton
+  const [showSkeleton, setShowSkeleton] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSkeleton(true);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Search States
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,11 +95,11 @@ export default function BlogHome() {
     const fetchPosts = async () => {
       try {
         setLoading(true);
-        
+
         // 1. Fetch Featured Post
         const featuredUrl = '/api/posts?is_featured=true&status=published&limit=1';
         const featuredRes = await fetch(featuredUrl);
-        
+
         if (!featuredRes.ok) {
           throw new Error(`Featured posts fetch failed: ${featuredRes.status} ${featuredRes.statusText}`);
         }
@@ -98,7 +108,7 @@ export default function BlogHome() {
         // 2. Fetch Latest Posts
         const latestUrl = '/api/posts?status=published&limit=10';
         const response = await fetch(latestUrl);
-        
+
         if (!response.ok) {
           throw new Error(`Latest posts fetch failed: ${response.status} ${response.statusText}`);
         }
@@ -139,14 +149,14 @@ export default function BlogHome() {
   // Real-time Search Logic
   const filteredPosts = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    
+
     const query = searchQuery.toLowerCase();
-    
+
     // Search in current posts + featured post
     const allSearchable = featuredPost ? [featuredPost, ...posts] : posts;
 
-    return allSearchable.filter(post => 
-      post.title.toLowerCase().includes(query) || 
+    return allSearchable.filter(post =>
+      post.title.toLowerCase().includes(query) ||
       (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
       post.author.fullName.toLowerCase().includes(query)
     );
@@ -158,16 +168,16 @@ export default function BlogHome() {
       setSubscribeMessage('Please enter your email address');
       return;
     }
-    
+
     // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setSubscribeMessage('Please enter a valid email address');
       return;
     }
-    
+
     setIsSubscribing(true);
     setSubscribeMessage('');
-    
+
     try {
       console.log('Attempting subscription with email:', email);
       const response = await fetch('/api/subscribers', {
@@ -177,26 +187,26 @@ export default function BlogHome() {
         },
         body: JSON.stringify({ email }),
       });
-      
+
       console.log('Subscription response status:', response.status);
       console.log('Subscription response ok:', response.ok);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Subscription error response:', errorText);
         throw new Error(errorText || 'Failed to subscribe. Please try again.');
       }
-      
+
       const data = await response.json();
       console.log('Subscription success data:', data);
-      
+
       setSubscribeMessage(data.message || 'Thank you for subscribing! You\'ll hear from us soon.');
       setEmail('');
     } catch (error) {
       console.error('Subscription error:', error);
       setSubscribeMessage(
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : 'An error occurred. Please try again later.'
       );
     } finally {
@@ -206,21 +216,21 @@ export default function BlogHome() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-blue-100 relative">
-      
+
       {/* --- SEARCH DRAWER (Right Side) --- */}
       {/* 1. Backdrop */}
-      <div 
+      <div
         className={`fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${isSearchOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         onClick={() => setIsSearchOpen(false)}
       />
 
       {/* 2. Drawer Panel */}
       <div className={`fixed top-0 right-0 z-[70] h-full w-full md:w-[450px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${isSearchOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-900">Search</h2>
-          <button 
+          <button
             onClick={() => setIsSearchOpen(false)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
@@ -245,7 +255,7 @@ export default function BlogHome() {
 
         {/* Results Area */}
         <div className="overflow-y-auto h-[calc(100vh-180px)] p-6">
-          
+
           {/* State: Typing but no results */}
           {searchQuery && filteredPosts.length === 0 && (
             <div className="text-center py-10 text-gray-500">
@@ -260,38 +270,38 @@ export default function BlogHome() {
                 Found {filteredPosts.length} matches
               </h3>
               {filteredPosts.map(post => (
-                <Link 
-                  href={`/articles/${post.slug}`} 
+                <Link
+                  href={`/articles/${post.slug}`}
                   key={post.id}
                   onClick={() => setIsSearchOpen(false)} // Close drawer on click
                   className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group"
                 >
                   {/* Thumbnail (Optional) */}
                   {post.featuredImageUrl && (
-                     <div className="w-16 h-16 relative flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
-                        <Image 
-                          src={getImageUrl(post.featuredImageUrl, { width: 64, height: 64, quality: 75 })} 
-                          alt="" 
-                          fill
-                          sizes="64px"
-                          className="object-cover"
-                          loading="lazy"
-                          placeholder="blur"
-                          blurDataURL={generateBlurDataURL(64, 64)}
-                        />
-                     </div>
+                    <div className="w-16 h-16 relative flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
+                      <Image
+                        src={getImageUrl(post.featuredImageUrl, { width: 64, height: 64, quality: 75 })}
+                        alt=""
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL={generateBlurDataURL(64, 64)}
+                      />
+                    </div>
                   )}
-                  
+
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                       {post.title}
                     </h4>
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                       <span className={`${CATEGORY_COLORS[post.category || ''] || CATEGORY_COLORS.default} px-1.5 py-0.5 rounded`}>
-                         {post.category || 'Uncategorized'}
-                       </span>
-                       <span>•</span>
-                       <span>{formatDate(post.publishedAt)}</span>
+                      <span className={`${CATEGORY_COLORS[post.category || ''] || CATEGORY_COLORS.default} px-1.5 py-0.5 rounded`}>
+                        {post.category || 'Uncategorized'}
+                      </span>
+                      <span>•</span>
+                      <span>{formatDate(post.publishedAt)}</span>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-600 mt-2" />
@@ -308,9 +318,9 @@ export default function BlogHome() {
               </h3>
               <div className="space-y-4">
                 {posts.slice(0, 4).map(post => (
-                  <Link 
-                    href={`/articles/${post.slug}`} 
-                    key={post.id} 
+                  <Link
+                    href={`/articles/${post.slug}`}
+                    key={post.id}
                     onClick={() => setIsSearchOpen(false)}
                     className="flex items-center gap-3 text-gray-600 hover:text-blue-600 group py-2"
                   >
@@ -327,7 +337,7 @@ export default function BlogHome() {
 
       {/* --- Navbar --- */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
               <Sparkles size={16} fill="currentColor" />
@@ -342,7 +352,7 @@ export default function BlogHome() {
           </div>
 
           {/* Trigger Button */}
-          <button 
+          <button
             onClick={() => setIsSearchOpen(true)}
             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-full transition-all group"
           >
@@ -352,10 +362,10 @@ export default function BlogHome() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-12">
+
         {/* --- Hero Section --- */}
-        <section className="mb-24 text-center max-w-3xl mx-auto">
+        <section className="mb-16 md:mb-24 text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold mb-6 uppercase tracking-wider">
             Welcome to the blog
           </div>
@@ -368,11 +378,11 @@ export default function BlogHome() {
         </section>
 
         {/* --- Content Area --- */}
-        {loading || (!posts.length && !featuredPost) ? (
+        {(loading && !showSkeleton) ? null : (loading || (!posts.length && !featuredPost)) ? (
           // Show loading skeleton
           <>
             {/* Featured Post Skeleton */}
-            <section className="mb-24">
+            <section className="mb-16 md:mb-24">
               <div className="grid md:grid-cols-12 gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
                 <div className="md:col-span-7 h-64 md:h-[400px] bg-gray-200 animate-pulse rounded-2xl"></div>
                 <div className="md:col-span-5 space-y-4">
@@ -401,7 +411,7 @@ export default function BlogHome() {
             </section>
 
             {/* Latest Posts Skeleton */}
-            <section className="mb-24">
+            <section className="mb-16 md:mb-24">
               <div className="flex items-center justify-between mb-10">
                 <h3 className="text-2xl font-bold text-gray-900">Latest Articles</h3>
               </div>
@@ -428,11 +438,11 @@ export default function BlogHome() {
           <>
             {/* --- Featured Post (Big Card) --- */}
             {loading ? (
-              <section className="mb-24">
+              <section className="mb-16 md:mb-24">
                 <div className="grid md:grid-cols-12 gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
                   {/* Skeleton Image */}
                   <div className="md:col-span-7 h-64 md:h-[400px] bg-gray-200 animate-pulse rounded-2xl"></div>
-                  
+
                   {/* Skeleton Content */}
                   <div className="md:col-span-5 space-y-4">
                     <div className="flex items-center gap-3 mb-2">
@@ -459,13 +469,13 @@ export default function BlogHome() {
                 </div>
               </section>
             ) : featuredPost && (
-              <section className="mb-24">
+              <section className="mb-16 md:mb-24">
                 <div className="group relative grid md:grid-cols-12 gap-8 items-center bg-gray-50 rounded-3xl p-6 md:p-8 hover:shadow-xl transition-all duration-300 border border-gray-100">
                   {/* Image Side */}
                   <div className="md:col-span-7 h-64 md:h-[400px] relative overflow-hidden rounded-2xl">
                     {featuredPost.featuredImageUrl ? (
-                      <Image 
-                        src={getImageUrl(featuredPost.featuredImageUrl, { width: 800, height: 600, quality: 85 })} 
+                      <Image
+                        src={getImageUrl(featuredPost.featuredImageUrl, { width: 800, height: 600, quality: 85 })}
                         alt={featuredPost.title}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 58vw, 58vw"
@@ -484,7 +494,7 @@ export default function BlogHome() {
                   {/* Content Side */}
                   <div className="md:col-span-5 flex flex-col gap-4">
                     <div className="flex items-center gap-3 mb-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${CATEGORY_COLORS[featuredPost.category || ''] || CATEGORY_COLORS.default}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${CATEGORY_COLORS[featuredPost.category || ''] || CATEGORY_COLORS.default}`}>
                         {featuredPost.category || 'Uncategorized'}
                       </span>
                       <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -498,7 +508,7 @@ export default function BlogHome() {
                         {featuredPost.title}
                       </h2>
                     </Link>
-                    
+
                     <p className="text-gray-600 line-clamp-3">
                       {featuredPost.excerpt || 'Discover insights and ideas in this featured article.'}
                     </p>
@@ -523,7 +533,7 @@ export default function BlogHome() {
             )}
 
             {/* --- Latest Posts Grid --- */}
-            <section className="mb-24">
+            <section className="mb-16 md:mb-24">
               <div className="flex items-center justify-between mb-10">
                 <h3 className="text-2xl font-bold text-gray-900">Latest Articles</h3>
                 {!loading && (
@@ -554,56 +564,56 @@ export default function BlogHome() {
                   ))
                 ) : (
                   posts.map((post) => (
-                  <article key={post.id} className="group flex flex-col h-full">
-                    {/* Image */}
-                    <Link href={`/articles/${post.slug}`} className="block overflow-hidden rounded-2xl mb-4 aspect-[4/3] relative">
-                      {post.featuredImageUrl ? (
-                        <Image 
-                          src={getImageUrl(post.featuredImageUrl, { width: 400, height: 300, quality: 80 })} 
-                          alt={post.title}
-                          fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                          placeholder="blur"
-                          blurDataURL={generateBlurDataURL(400, 300)}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <FileText size={48} className="text-gray-400" />
-                        </div>
-                      )}
-                    </Link>
-
-                    {/* Content */}
-                    <div className="flex flex-col flex-grow">
-                      <div className="flex items-center gap-3 mb-3 text-xs">
-                        <span className={`px-2 py-1 rounded-md font-medium ${CATEGORY_COLORS[post.category || ''] || CATEGORY_COLORS.default}`}>
-                          {post.category || 'Uncategorized'}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-500">{formatDate(post.publishedAt)}</span>
-                      </div>
-
-                      <Link href={`/articles/${post.slug}`} className="mb-3 block">
-                        <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {post.title}
-                        </h4>
+                    <article key={post.id} className="group flex flex-col h-full">
+                      {/* Image */}
+                      <Link href={`/articles/${post.slug}`} className="block overflow-hidden rounded-2xl mb-4 aspect-[4/3] relative">
+                        {post.featuredImageUrl ? (
+                          <Image
+                            src={getImageUrl(post.featuredImageUrl, { width: 400, height: 300, quality: 80 })}
+                            alt={post.title}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            placeholder="blur"
+                            blurDataURL={generateBlurDataURL(400, 300)}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <FileText size={48} className="text-gray-400" />
+                          </div>
+                        )}
                       </Link>
 
-                      <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-grow">
-                        {post.excerpt || 'Read this article to discover more insights and ideas.'}
-                      </p>
-
-                      {/* Author Mini */}
-                      <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
-                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
-                          {post.author.fullName.charAt(0)}
+                      {/* Content */}
+                      <div className="flex flex-col flex-grow">
+                        <div className="flex items-center gap-3 mb-3 text-xs">
+                          <span className={`px-2 py-1 rounded-md font-medium ${CATEGORY_COLORS[post.category || ''] || CATEGORY_COLORS.default}`}>
+                            {post.category || 'Uncategorized'}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-500">{formatDate(post.publishedAt)}</span>
                         </div>
-                        <span className="text-xs font-medium text-gray-900">{post.author.fullName}</span>
+
+                        <Link href={`/articles/${post.slug}`} className="mb-3 block">
+                          <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                            {post.title}
+                          </h4>
+                        </Link>
+
+                        <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-grow">
+                          {post.excerpt || 'Read this article to discover more insights and ideas.'}
+                        </p>
+
+                        {/* Author Mini */}
+                        <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
+                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                            {post.author.fullName.charAt(0)}
+                          </div>
+                          <span className="text-xs font-medium text-gray-900">{post.author.fullName}</span>
+                        </div>
                       </div>
-                    </div>
-                  </article>
+                    </article>
                   ))
                 )}
               </div>
@@ -613,31 +623,31 @@ export default function BlogHome() {
 
         {/* --- Newsletter --- */}
         <section className="bg-gray-900 rounded-3xl p-12 text-center text-white relative overflow-hidden">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
-           <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-             <h2 className="text-3xl font-bold">Stay in the loop</h2>
-             <p className="text-gray-400">
-               Join 23K+ subscribers getting the best content delivered to their inbox weekly. No spam, ever.
-             </p>
-             <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-md sm:max-w-none mx-auto">
-               <input 
-                 type="email" 
-                 placeholder="john@example.com"
-                 value={email}
-                 onChange={(e) => setEmail(e.target.value)}
-                 className="px-4 py-3 rounded-lg text-gray-900 bg-white focus:outline-none w-full sm:w-80"
-                 disabled={isSubscribing}
-               />
-               <button 
-                 type="submit"
-                 disabled={isSubscribing || !email}
-                 className="px-6 py-3 font-bold rounded-lg transition w-full sm:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50"
-               >
-                 {isSubscribing ? 'Subscribing...' : 'Subscribe'}
-               </button>
-             </form>
-             {subscribeMessage && <p className="text-green-400 text-sm mt-2">{subscribeMessage}</p>}
-           </div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+            <h2 className="text-3xl font-bold">Stay in the loop</h2>
+            <p className="text-gray-400">
+              Join 23K+ subscribers getting the best content delivered to their inbox weekly. No spam, ever.
+            </p>
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-md sm:max-w-none mx-auto">
+              <input
+                type="email"
+                placeholder="john@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="px-4 py-3 rounded-lg text-gray-900 bg-white focus:outline-none w-full sm:w-80"
+                disabled={isSubscribing}
+              />
+              <button
+                type="submit"
+                disabled={isSubscribing || !email}
+                className="px-6 py-3 font-bold rounded-lg transition w-full sm:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50"
+              >
+                {isSubscribing ? 'Subscribing...' : 'Subscribe'}
+              </button>
+            </form>
+            {subscribeMessage && <p className="text-green-400 text-sm mt-2">{subscribeMessage}</p>}
+          </div>
         </section>
 
       </main>
@@ -646,18 +656,18 @@ export default function BlogHome() {
       <footer className="border-t border-gray-100 mt-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div className="flex items-center gap-2 font-bold text-lg">
-             <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white">
-               <Sparkles size={12} fill="currentColor" />
-             </div>
-             Ukoni
+            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white">
+              <Sparkles size={12} fill="currentColor" />
+            </div>
+            Ukoni
           </div>
           <div className="text-sm text-gray-500">
             &copy; 2026 Ukoni Inc. All rights reserved.
           </div>
           <div className="flex gap-6 text-gray-400 items-center">
-            <a href="https://www.linkedin.com/in/adaeze-sophia-ukoni-1b6704a5"><Linkedin className="w-5 h-5 hover:text-gray-900 cursor-pointer transition" /></a>
+            <a href="https://www.linkedin.com/in/adaeze-sophia-ukoni-1b6704a5"><Linkedin className="w-5 h-5 hover:text-blue-900 cursor-pointer transition" /></a>
             <a href="https://www.instagram.com/ukoni_sophia"><Instagram size={20} className="hover:text-pink-600 cursor-pointer transition" /></a>
-           
+
           </div>
         </div>
       </footer>

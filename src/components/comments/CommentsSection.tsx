@@ -13,12 +13,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  MessageSquare, 
-  Send, 
-  CornerDownRight, 
-  User, 
-  Mail, 
+import {
+  MessageSquare,
+  Send,
+  CornerDownRight,
+  User,
+  Mail,
   Loader2,
   Reply,
   Plus,
@@ -80,6 +80,51 @@ const CommentSkeleton = () => (
   </div>
 );
 
+const buildCommentTree = (flatComments: Comment[]): Comment[] => {
+  const commentMap = new Map<string, Comment>();
+  const roots: Comment[] = [];
+
+  // 1. Initialize map with all comments and empty replies array
+  flatComments.forEach(c => {
+    commentMap.set(c.id, { ...c, replies: [] });
+  });
+
+  // 2. Build tree structure
+  flatComments.forEach(c => {
+    const commentWithReplies = commentMap.get(c.id)!;
+
+    if (c.parentId) {
+      const parent = commentMap.get(c.parentId);
+      if (parent) {
+        parent.replies.push(commentWithReplies);
+      } else {
+        // If parent is missing (e.g., deleted), treat as top-level or ignore
+        roots.push(commentWithReplies);
+      }
+    } else {
+      roots.push(commentWithReplies);
+    }
+  });
+
+  // 3. Sort replies (oldest first)
+  const sortReplies = (comments: Comment[]) => {
+    comments.forEach(c => {
+      if (c.replies?.length > 0) {
+        c.replies.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        sortReplies(c.replies); // Recurse
+      }
+    });
+  };
+
+  // Sort roots (newest first)
+  roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Sort all nested replies
+  sortReplies(roots);
+
+  return roots;
+};
+
 // --- Main Component ---
 
 export function CommentsSection({ postId }: CommentsSectionProps) {
@@ -117,8 +162,14 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
 
     const fetchComments = async () => {
       try {
-        const data = await apiClient<Comment[]>(`/comments?postId=${postId}&includeReplies=true`);
-        setComments(data);
+        const data = await apiClient<Comment[]>(`/comments?postId=${postId}`);
+        const params = new URLSearchParams();
+        params.append('postId', postId);
+
+        // Since API returns flat list, we build the tree here
+        const tree = buildCommentTree(data);
+
+        setComments(tree);
         setIsApiAvailable(true);
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
@@ -149,7 +200,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
           parentId: replyTo?.id ? String(replyTo.id) : undefined,
         },
       });
-      
+
       // Update logic...
       if (replyTo?.id) {
         const addReplyRecursively = (list: Comment[]): Comment[] => {
@@ -184,8 +235,8 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
     setReplyTo(null);
     setIsFormVisible(true);
     setTimeout(() => {
-        document.getElementById('comment-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setFocus('authorName');
+      document.getElementById('comment-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setFocus('authorName');
     }, 100);
   };
 
@@ -193,7 +244,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
     if (!isApiAvailable) return;
     setReplyTo({ id: commentId, authorName: authorName } as Comment);
     setIsFormVisible(true);
-    
+
     setTimeout(() => {
       document.getElementById('comment-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setFocus('content');
@@ -217,7 +268,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
           </div>
           <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</div>
           <div className="mt-2">
-            <button 
+            <button
               onClick={() => handleReplyClick(comment.id, comment.authorName)}
               className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
             >
@@ -236,7 +287,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
 
   return (
     <div className="max-w-3xl mx-auto mt-12 mb-20">
-      
+
       {/* --- Header Section --- */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-2">
@@ -245,7 +296,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
             Comments <span className="text-gray-400 font-normal">({comments.length})</span>
           </h3>
         </div>
-        
+
         {/* Only show the "Write Comment" button if the form is HIDDEN */}
         {!isFormVisible && (
           <Button onClick={handleOpenForm} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
@@ -270,19 +321,19 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
                   'Write a new comment'
                 )}
               </span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8 text-gray-400 hover:text-gray-700 hover:bg-white"
                 onClick={() => {
-                   setIsFormVisible(false);
-                   setReplyTo(null);
+                  setIsFormVisible(false);
+                  setReplyTo(null);
                 }}
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <CardContent className="p-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -298,26 +349,26 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
                   </div>
                 </div>
 
-                <Textarea 
-                  placeholder={replyTo ? `Replying to ${replyTo.authorName}...` : "What are your thoughts?"} 
-                  className="min-h-[120px] resize-y" 
-                  {...register('content')} 
-                  disabled={isSubmitting} 
+                <Textarea
+                  placeholder={replyTo ? `Replying to ${replyTo.authorName}...` : "What are your thoughts?"}
+                  className="min-h-[120px] resize-y"
+                  {...register('content')}
+                  disabled={isSubmitting}
                 />
                 {errors.content && <p className="text-red-500 text-xs mt-1">{errors.content.message}</p>}
 
                 <div className="flex justify-end gap-3">
-                    <Button 
-                        type="button" 
-                        variant="ghost" 
-                        onClick={() => setIsFormVisible(false)}
-                    >
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white">
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                        Post Comment
-                    </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setIsFormVisible(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white">
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                    Post Comment
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -333,29 +384,29 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
           comments.map(comment => <RecursiveComment key={comment.id} comment={comment} />)
         ) : !isApiAvailable ? (
           <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">Comments are temporarily unavailable</p>
-              <p className="text-gray-400 text-sm mt-1">Please check back later</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  setRetryCount(0);
-                  setIsApiAvailable(true);
-                }}
-                className="mt-4"
-              >
-                Retry
-              </Button>
+            <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">Comments are temporarily unavailable</p>
+            <p className="text-gray-400 text-sm mt-1">Please check back later</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setRetryCount(0);
+                setIsApiAvailable(true);
+              }}
+              className="mt-4"
+            >
+              Retry
+            </Button>
           </div>
         ) : (
           !isFormVisible && (
             <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No comments yet</p>
-                <Button variant="link" onClick={handleOpenForm} className="text-blue-600 font-semibold">
-                    Start the conversation
-                </Button>
+              <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">No comments yet</p>
+              <Button variant="link" onClick={handleOpenForm} className="text-blue-600 font-semibold">
+                Start the conversation
+              </Button>
             </div>
           )
         )}

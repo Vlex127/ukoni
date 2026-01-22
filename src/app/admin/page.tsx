@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { getApiUrl } from "@/lib/api";
 import VisitorsChart from "@/components/ui/VisitorsChart";
 import {
-  Bell,
   BookOpen,
   CalendarDays,
   Edit,
@@ -187,10 +186,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative cursor-pointer bg-white p-2 rounded-full shadow-sm hover:shadow-md transition">
-              <Bell size={18} className="text-gray-400 hover:text-gray-600 transition" />
-              <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
-            </div>
+
 
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-200 overflow-hidden relative border-2 border-white shadow-sm">
               <img

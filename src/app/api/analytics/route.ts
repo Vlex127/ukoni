@@ -60,6 +60,29 @@ export async function GET(request: NextRequest) {
     const todayLogs = analytics.filter(a => a.createdAt >= startOfToday);
     const yesterdayLogs = analytics.filter(a => a.createdAt >= startOfYesterday && a.createdAt < startOfToday);
 
+    const topPagesRaw = calculateTopPages(todayLogs);
+
+    // Enrich top pages with titles
+    const topPages = await Promise.all(topPagesRaw.map(async (page) => {
+      // Check if it's a blog post or article
+      const match = page.page.match(/^\/(?:blog|articles)\/([^\/]+)$/);
+      if (match && match[1]) {
+        const slug = match[1];
+        try {
+          const post = await prisma.post.findUnique({
+            where: { slug },
+            select: { title: true }
+          });
+          if (post?.title) {
+            return { ...page, page: post.title };
+          }
+        } catch (e) {
+          // Ignore error and return original page
+        }
+      }
+      return page;
+    }));
+
     const data = {
       current_period: {
         total_visitors: countUniqueVisitors(todayLogs),
@@ -71,7 +94,7 @@ export async function GET(request: NextRequest) {
         page_visitors: countUniqueVisitors(yesterdayLogs.filter(a => a.event === 'page_view')),
         comment_visitors: countUniqueVisitors(yesterdayLogs.filter(a => a.event === 'comment'))
       },
-      top_pages: calculateTopPages(todayLogs),
+      top_pages: topPages,
       avg_session: calculateAvgSession(todayLogs),
       traffic_sources: calculateTrafficSources(todayLogs)
     };
@@ -188,15 +211,6 @@ function calculateTrafficSources(logs: any[]) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
     const validatedData = analyticsSchema.parse(body)
 

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 import { Suspense } from "react";
-import AnalyticsTracker from "@/components/AnalyticsTracker";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 
 export default function RootLayout({
   children,

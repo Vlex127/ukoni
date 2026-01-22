@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
         />
         <StatCard
           icon={<BarChart3 size={24} />}
-          label="Avg. Session"
+          label="Avg. User Duration"
           value={visitorData.avg_session || "0:00"}
           color="text-orange-600"
           bg="bg-orange-50"

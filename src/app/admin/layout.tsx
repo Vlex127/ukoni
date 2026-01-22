@@ -11,7 +11,8 @@ import {
   BarChart3,
   LogOut,
   Menu,
-  X
+  X,
+  HomeIcon
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner"; // Assuming you have this
 
@@ -51,7 +52,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FE] flex font-sans overflow-hidden">
+    <div className="h-screen bg-[#F4F7FE] flex font-sans overflow-hidden">
 
       {/* Mobile Sidebar Overlay */}
       <div
@@ -78,6 +79,12 @@ export default function AdminLayout({
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col space-y-4 w-full px-4">
+          <SidebarIcon
+            icon={<HomeIcon size={24} />}
+            href="/"
+            active={pathname === "/"}
+            label="Home"
+          />
           <SidebarIcon
             icon={<LayoutGrid size={24} />}
             href="/admin"
@@ -167,16 +174,20 @@ function SidebarIcon({
   return (
     <Link
       href={href}
-      title={label}
       className={`
-        relative w-10 h-10 rounded-xl transition-all duration-200 group flex justify-center items-center
+        relative w-full h-[64px] rounded-xl transition-all duration-200 group flex flex-col justify-center items-center gap-1
         ${active
-          ? 'text-white bg-blue-600 shadow-lg shadow-blue-200'
-          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+          ? 'text-blue-600 bg-blue-50 shadow-sm'
+          : 'text-gray-400 hover:text-blue-600 hover:bg-gray-50'
         }
       `}
     >
-      {icon}
+      <div className={`transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {icon}
+      </div>
+      <span className={`text-[10px] font-medium leading-none ${active ? 'font-bold' : ''}`}>
+        {label}
+      </span>
     </Link>
   );
 }

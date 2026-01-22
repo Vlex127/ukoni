@@ -43,7 +43,7 @@ class EmailService {
 
   async sendWelcomeEmail(email: string): Promise<boolean> {
     const subject = 'Welcome to Ukoni - Thank You for Subscribing!';
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -184,8 +184,7 @@ class EmailService {
             
             <p>Welcome aboard!</p>
             <p>
-              <strong>Adaeze Sophia Ukoni</strong><br>
-              Founder, Ukoni
+              <strong>Sophia Ukoni</strong><br> 
             </p>
           </div>
           

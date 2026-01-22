@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  FileText, 
-  MoreHorizontal, 
-  X, 
+import {
+  Plus,
+  Search,
+  Edit3,
+  Trash2,
+  FileText,
+  MoreHorizontal,
+  X,
   Image as ImageIcon,
   Filter,
   CalendarDays,
@@ -45,7 +45,7 @@ interface Post {
 }
 
 const categories = [
-  "Technology", "Design", "Culture", "Productivity", 
+  "Technology", "Design", "Faith", "Culture", "Productivity",
   "Development", "AI", "Lifestyle", "Business",
 ];
 
@@ -96,7 +96,7 @@ export default function PostsPage() {
     }
   };
 
-  const filteredPosts = posts.filter(post => 
+  const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (post.category && post.category.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -105,11 +105,11 @@ export default function PostsPage() {
     if (!file) return null;
 
     setIsUploading(true);
-    
+
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const response = await fetch('/api/media/upload', {
         method: "POST",
         body: formData,
@@ -120,7 +120,7 @@ export default function PostsPage() {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setFormData(prev => ({
           ...prev,
@@ -156,9 +156,9 @@ export default function PostsPage() {
       const url = editingPost
         ? `/api/posts/${editingPost.slug}`
         : '/api/posts';
-      
+
       const method = editingPost ? "PUT" : "POST";
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -222,7 +222,7 @@ export default function PostsPage() {
       title: "", content: "", excerpt: "", status: "draft", category: "",
       featuredImage: "",
       featuredImageUrl: "",
-      featuredImagePublicId: "", 
+      featuredImagePublicId: "",
       metaTitle: "",
       metaDescription: "",
       isFeatured: false,
@@ -233,20 +233,20 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-6 md:space-y-8 pb-20 md:pb-0">
-      
+
       {/* --- Responsive Header Section --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">All Posts</h1>
           <p className="text-sm md:text-base text-gray-400 mt-1">Manage and organize your blog content</p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
           <div className="relative group w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search posts..." 
+            <input
+              type="text"
+              placeholder="Search posts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-3 bg-white rounded-xl md:rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-blue-100 outline-none w-full md:w-64 transition-all"
@@ -344,68 +344,68 @@ export default function PostsPage() {
 
           {/* --- View 2: Mobile Cards (Hidden on Desktop) --- */}
           <div className="md:hidden grid grid-cols-1 gap-4">
-             {filteredPosts.map((post) => (
-               <div key={post.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col gap-4">
-                  {/* Top Row: Image + Title */}
-                  <div className="flex gap-3">
-                     <div className="h-16 w-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                        {post.featuredImageUrl ? (
-                          <img src={post.featuredImageUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-gray-300">
-                            <ImageIcon size={24} />
-                          </div>
-                        )}
-                     </div>
-                     <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-bold text-gray-800 line-clamp-2 text-sm">{post.title}</h3>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-                           <User size={12} />
-                           <span className="truncate">{post.author.username}</span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-                           <CalendarDays size={12} />
-                           <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                        </div>
-                     </div>
+            {filteredPosts.map((post) => (
+              <div key={post.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col gap-4">
+                {/* Top Row: Image + Title */}
+                <div className="flex gap-3">
+                  <div className="h-16 w-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                    {post.featuredImageUrl ? (
+                      <img src={post.featuredImageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-gray-300">
+                        <ImageIcon size={24} />
+                      </div>
+                    )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold text-gray-800 line-clamp-2 text-sm">{post.title}</h3>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                      <User size={12} />
+                      <span className="truncate">{post.author.username}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                      <CalendarDays size={12} />
+                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Middle Row: Meta info */}
-                  <div className="flex items-center justify-between border-t border-b border-gray-50 py-3">
-                     <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Category</span>
-                        <span className="text-xs font-medium text-gray-600">{post.category || "Uncategorized"}</span>
-                     </div>
-                     <div className="flex flex-col gap-1 items-end">
-                        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Views</span>
-                        <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                           <Eye size={12} /> {post.viewCount}
-                        </div>
-                     </div>
+                {/* Middle Row: Meta info */}
+                <div className="flex items-center justify-between border-t border-b border-gray-50 py-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Category</span>
+                    <span className="text-xs font-medium text-gray-600">{post.category || "Uncategorized"}</span>
                   </div>
+                  <div className="flex flex-col gap-1 items-end">
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Views</span>
+                    <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                      <Eye size={12} /> {post.viewCount}
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Bottom Row: Status + Actions */}
-                  <div className="flex items-center justify-between">
-                     <StatusBadge status={post.status} />
-                     <div className="flex gap-2">
-                        <button 
-                          onClick={() => openEditModal(post)}
-                          className="p-2 bg-blue-50 text-blue-600 rounded-lg"
-                        >
-                           <Edit3 size={18} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(post.id)}
-                          className="p-2 bg-pink-50 text-pink-600 rounded-lg"
-                        >
-                           <Trash2 size={18} />
-                        </button>
-                     </div>
+                {/* Bottom Row: Status + Actions */}
+                <div className="flex items-center justify-between">
+                  <StatusBadge status={post.status} />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openEditModal(post)}
+                      className="p-2 bg-blue-50 text-blue-600 rounded-lg"
+                    >
+                      <Edit3 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="p-2 bg-pink-50 text-pink-600 rounded-lg"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-               </div>
-             ))}
+                </div>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -413,20 +413,20 @@ export default function PostsPage() {
       {/* --- Responsive Modal --- */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-          <div 
-            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" 
+          <div
+            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
             onClick={closeModal}
           ></div>
-          
+
           {/* Modal Container: Full height on mobile, fit content on desktop */}
           <div className="relative bg-white w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-3xl md:rounded-[2rem] rounded-t-[2rem] shadow-2xl flex flex-col">
-            
+
             {/* Modal Header */}
             <div className="flex-shrink-0 bg-white/80 backdrop-blur-md px-6 md:px-8 py-4 md:py-6 border-b border-gray-100 flex justify-between items-center z-10 md:rounded-t-[2rem] rounded-t-[2rem]">
               <h3 className="text-xl md:text-2xl font-bold text-gray-800">
                 {editingPost ? "Edit Post" : "Create Post"}
               </h3>
-              <button 
+              <button
                 onClick={closeModal}
                 className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
               >
@@ -437,7 +437,7 @@ export default function PostsPage() {
             {/* Modal Body - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                
+
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Featured Image</label>
@@ -445,9 +445,9 @@ export default function PostsPage() {
                     <div className="w-full md:w-32 h-40 md:h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-blue-500 transition-colors bg-gray-50 md:bg-white">
                       {imagePreview || formData.featuredImageUrl ? (
                         <div className="relative w-full h-full">
-                          <img 
-                            src={imagePreview || formData.featuredImageUrl} 
-                            alt="Preview" 
+                          <img
+                            src={imagePreview || formData.featuredImageUrl}
+                            alt="Preview"
                             className="w-full h-full object-cover rounded-lg"
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center opacity-0 hover:opacity-100">
@@ -476,7 +476,7 @@ export default function PostsPage() {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                     placeholder="Enter post title"
                     required
@@ -485,28 +485,28 @@ export default function PostsPage() {
 
                 {/* Stacks on mobile, Side-by-side on Desktop */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <InputGroup label="Category">
-                      <select
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 border-transparent focus:bg-white border-2 focus:border-blue-100 rounded-xl outline-none transition-all"
-                      >
-                        <option value="" disabled>Select Category</option>
-                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                      </select>
-                   </InputGroup>
+                  <InputGroup label="Category">
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border-transparent focus:bg-white border-2 focus:border-blue-100 rounded-xl outline-none transition-all"
+                    >
+                      <option value="" disabled>Select Category</option>
+                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  </InputGroup>
 
-                   <InputGroup label="Status">
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 border-transparent focus:bg-white border-2 focus:border-blue-100 rounded-xl outline-none transition-all"
-                      >
-                        <option value="draft">Draft</option>
-                        <option value="published">Published</option>
-                        <option value="archived">Archived</option>
-                      </select>
-                   </InputGroup>
+                  <InputGroup label="Status">
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border-transparent focus:bg-white border-2 focus:border-blue-100 rounded-xl outline-none transition-all"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </InputGroup>
                 </div>
 
                 <InputGroup label="Excerpt">
@@ -547,21 +547,21 @@ export default function PostsPage() {
 
             {/* Modal Footer - Fixed at bottom */}
             <div className="flex-shrink-0 bg-white border-t border-gray-100 p-4 md:p-6 flex justify-end gap-3 md:rounded-b-[2rem]">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-6 py-3 rounded-xl text-gray-500 font-medium hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200 transition-transform active:scale-95"
-                >
-                  {editingPost ? "Save Changes" : "Publish Post"}
-                </button>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-6 py-3 rounded-xl text-gray-500 font-medium hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200 transition-transform active:scale-95"
+              >
+                {editingPost ? "Save Changes" : "Publish Post"}
+              </button>
             </div>
-            
+
           </div>
         </div>
       )}
@@ -573,8 +573,8 @@ export default function PostsPage() {
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
-    published: "bg-blue-100 text-blue-700 border-blue-200", 
-    draft: "bg-orange-100 text-orange-700 border-orange-200", 
+    published: "bg-blue-100 text-blue-700 border-blue-200",
+    draft: "bg-orange-100 text-orange-700 border-orange-200",
     archived: "bg-pink-100 text-pink-700 border-pink-200",
   };
 

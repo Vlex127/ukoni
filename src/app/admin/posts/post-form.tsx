@@ -26,6 +26,7 @@ export function PostForm({ post }: PostFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: post?.title || '',
+    slug: post?.slug || '',
     content: post?.content || '',
     excerpt: post?.excerpt || '',
     status: post?.status || 'draft',
@@ -40,6 +41,17 @@ export function PostForm({ post }: PostFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-generate slug from title for new posts
+  useEffect(() => {
+    if (!post?.id && formData.title) {
+      const slug = formData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+      setFormData(prev => ({ ...prev, slug }));
+    }
+  }, [formData.title, post?.id]);
 
   useEffect(() => {
     if (post?.featuredImageUrl) {
@@ -75,7 +87,7 @@ export function PostForm({ post }: PostFormProps) {
         }
 
         const data = await response.json();
-        
+
         if (data.success) {
           setFormData(prev => ({
             ...prev,
@@ -107,16 +119,25 @@ export function PostForm({ post }: PostFormProps) {
     const method = post?.slug ? 'PUT' : 'POST';
 
     try {
-      console.log('Form data being sent:', formData);
+      // Ensure slug is generated for new posts before submission
+      const dataToSend = { ...formData };
+      if (!post?.id && (!dataToSend.slug || dataToSend.slug.trim() === '')) {
+        dataToSend.slug = formData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+      }
+
+      console.log('Form data being sent:', dataToSend);
       console.log('Request URL:', url);
       console.log('Request method:', method);
-      
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
 
       if (!response.ok) {
@@ -253,6 +274,7 @@ export function PostForm({ post }: PostFormProps) {
           >
             <option value="">Select a category</option>
             <option value="Design">Design</option>
+            <option value="Faith">Faith</option>
             <option value="Culture">Culture</option>
             <option value="Technology">Technology</option>
             <option value="Business">Business</option>
@@ -290,7 +312,7 @@ export function PostForm({ post }: PostFormProps) {
 
       <div className="bg-gray-50 p-4 rounded-lg">
         <h3 className="text-sm font-medium text-gray-700 mb-2">SEO Settings</h3>
-        
+
         <div className="mb-4">
           <label htmlFor="meta_title" className="block text-sm font-medium text-gray-700 mb-1">
             Meta Title

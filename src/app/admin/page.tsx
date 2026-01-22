@@ -76,6 +76,7 @@ export default function AdminDashboard() {
   }
 
   const [visitorData, setVisitorData] = useState<VisitorChartData>({ currentPeriod: [], previousPeriod: [] });
+  const [topPages, setTopPages] = useState<Array<{ page: string; views: number; percentage: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +110,7 @@ export default function AdminDashboard() {
             count: data.previous_period?.total_visitors || 0
           }]
         });
+        setTopPages(data.top_pages || []);
       } catch (err) {
         console.error(err);
         setVisitorData({ currentPeriod: [], previousPeriod: [] });
@@ -341,6 +343,34 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Top Pages Section */}
+      {topPages.length > 0 && (
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4">Top Pages</h3>
+          <div className="space-y-3">
+            {topPages.map((item, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex-1 min-w-0 mr-4">
+                  <div className="text-sm font-medium text-gray-800 truncate" title={item.page}>
+                    {item.page}
+                  </div>
+                  <div className="text-xs text-gray-500">{item.views.toLocaleString()} views</div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="w-20 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500 w-8 text-right">{item.percentage}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

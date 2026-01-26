@@ -45,8 +45,9 @@ interface Post {
 }
 
 const categories = [
-  "Technology", "Design", "Faith", "Culture", "Productivity",
-  "Development", "AI", "Lifestyle", "Business",
+  "Faith & Spirituality", "Personal Growth", "Life Purpose", "Career & Calling",
+  "Family & Relationships", "Health & Wellness", "Creativity & Arts",
+  "Education & Learning", "Community & Service", "Culture & Society", "Lifestyle",
 ];
 
 export default function PostsPage() {

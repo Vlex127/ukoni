@@ -48,14 +48,17 @@ type Post = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Technology: 'bg-blue-100 text-blue-800',
-  Design: 'bg-purple-100 text-purple-800',
-  Culture: 'bg-pink-100 text-pink-800',
-  Productivity: 'bg-green-100 text-green-800',
-  Development: 'bg-orange-100 text-orange-800',
-  AI: 'bg-red-100 text-red-800',
-  Lifestyle: 'bg-yellow-100 text-yellow-800',
-  Business: 'bg-indigo-100 text-indigo-800',
+  'Faith & Spirituality': 'bg-purple-100 text-purple-800',
+  'Personal Growth': 'bg-green-100 text-green-800',
+  'Life Purpose': 'bg-blue-100 text-blue-800',
+  'Career & Calling': 'bg-orange-100 text-orange-800',
+  'Family & Relationships': 'bg-pink-100 text-pink-800',
+  'Health & Wellness': 'bg-emerald-100 text-emerald-800',
+  'Creativity & Arts': 'bg-indigo-100 text-indigo-800',
+  'Education & Learning': 'bg-cyan-100 text-cyan-800',
+  'Community & Service': 'bg-red-100 text-red-800',
+  'Culture & Society': 'bg-yellow-100 text-yellow-800',
+  'Lifestyle': 'bg-amber-100 text-amber-800',
   default: 'bg-gray-100 text-gray-800',
 };
 

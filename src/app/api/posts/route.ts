@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const postSchema = z.object({
-  title: z.string().min(1),
-  slug: z.string().min(1),
-  content: z.string().min(1),
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().min(1, "Slug is required"),
+  content: z.string().min(1, "Content is required"),
   excerpt: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
   category: z.string().optional(),
@@ -90,7 +90,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validatedData = postSchema.parse(body)
+    console.log('Received post data:', body)
+    
+    let validatedData
+    try {
+      validatedData = postSchema.parse(body)
+    } catch (validationError) {
+      console.error('Validation error:', validationError)
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: validationError.errors },
+          { status: 400 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Validation failed' },
+        { status: 400 }
+      )
+    }
+
+    console.log('Validated data:', validatedData)
 
     const post = await prisma.post.create({
       data: {
@@ -109,11 +128,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('Created post:', post)
     return NextResponse.json(post, { status: 201 })
   } catch (error) {
     console.error('Posts POST error:', error)
     return NextResponse.json(
-      { error: 'Failed to create post' },
+      { error: 'Failed to create post', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

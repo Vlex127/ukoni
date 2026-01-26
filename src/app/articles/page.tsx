@@ -42,11 +42,17 @@ type Post = {
 
 const CATEGORIES = [
   "All Topics",
-  "Technology",
-  "Design",
-  "Culture",
-  "Development",
-  "AI",
+  "Faith & Spirituality",
+  "Personal Growth",
+  "Life Purpose",
+  "Career & Calling",
+  "Family & Relationships",
+  "Health & Wellness",
+  "Creativity & Arts",
+  "Education & Learning",
+  "Community & Service",
+  "Culture & Society",
+  "Lifestyle",
 ];
 
 export default function ArticlesPage() {

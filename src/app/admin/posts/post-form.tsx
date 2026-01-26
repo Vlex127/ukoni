@@ -42,17 +42,6 @@ export function PostForm({ post }: PostFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Auto-generate slug from title for new posts
-  useEffect(() => {
-    if (!post?.id && formData.title) {
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-      setFormData(prev => ({ ...prev, slug }));
-    }
-  }, [formData.title, post?.id]);
-
   useEffect(() => {
     if (post?.featuredImageUrl) {
       setImagePreview(post.featuredImageUrl);
@@ -111,6 +100,7 @@ export function PostForm({ post }: PostFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
 
     const url = post?.slug
       ? `/api/posts/${post.slug}`
@@ -119,14 +109,26 @@ export function PostForm({ post }: PostFormProps) {
     const method = post?.slug ? 'PUT' : 'POST';
 
     try {
-      // Ensure slug is generated for new posts before submission
-      const dataToSend = { ...formData };
-      if (!post?.id && (!dataToSend.slug || dataToSend.slug.trim() === '')) {
-        dataToSend.slug = formData.title
+      console.log('Current formData before submission:', formData);
+
+      // Generate slug if missing or empty
+      let finalSlug = formData.slug;
+
+      if (!finalSlug || finalSlug.trim() === '') {
+        finalSlug = formData.title
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)+/g, '');
+
+        // Update the state with the generated slug
+        setFormData(prev => ({ ...prev, slug: finalSlug }));
       }
+
+      // Prepare data to send with guaranteed slug
+      const dataToSend = {
+        ...formData,
+        slug: finalSlug
+      };
 
       console.log('Form data being sent:', dataToSend);
       console.log('Request URL:', url);
@@ -140,10 +142,13 @@ export function PostForm({ post }: PostFormProps) {
         body: JSON.stringify(dataToSend),
       });
 
+      const responseData = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response data:', responseData);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error Response:', errorData);
-        throw new Error(errorData.detail || errorData.error || 'Failed to save post');
+        console.error('API Error Response:', responseData);
+        throw new Error(responseData.detail || responseData.error || 'Failed to save post');
       }
 
       // Redirect to posts list after successful save
@@ -158,6 +163,9 @@ export function PostForm({ post }: PostFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Hidden field to ensure slug is always included */}
+      <input type="hidden" name="slug" value={formData.slug} />
+
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
           <div className="flex">
@@ -206,6 +214,21 @@ export function PostForm({ post }: PostFormProps) {
       </div>
 
       <div>
+        <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+          Slug
+        </label>
+        <input
+          type="text"
+          id="slug"
+          value={formData.slug}
+          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          placeholder="auto-generated from title"
+          required
+        />
+      </div>
+
+      <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
           Title
         </label>
@@ -213,7 +236,14 @@ export function PostForm({ post }: PostFormProps) {
           type="text"
           id="title"
           value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          onChange={(e) => {
+            const newTitle = e.target.value;
+            setFormData({
+              ...formData,
+              title: newTitle,
+              slug: !post?.id ? newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : formData.slug
+            });
+          }}
           className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           required
         />
@@ -273,25 +303,17 @@ export function PostForm({ post }: PostFormProps) {
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Select a category</option>
-            <option value="Design">Design</option>
-            <option value="Faith">Faith</option>
-            <option value="Culture">Culture</option>
-            <option value="Technology">Technology</option>
-            <option value="Business">Business</option>
+            <option value="Faith & Spirituality">Faith & Spirituality</option>
+            <option value="Personal Growth">Personal Growth</option>
+            <option value="Life Purpose">Life Purpose</option>
+            <option value="Career & Calling">Career & Calling</option>
+            <option value="Family & Relationships">Family & Relationships</option>
+            <option value="Health & Wellness">Health & Wellness</option>
+            <option value="Creativity & Arts">Creativity & Arts</option>
+            <option value="Education & Learning">Education & Learning</option>
+            <option value="Community & Service">Community & Service</option>
+            <option value="Culture & Society">Culture & Society</option>
             <option value="Lifestyle">Lifestyle</option>
-            <option value="Travel">Travel</option>
-            <option value="Food">Food</option>
-            <option value="Sports">Sports</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Education">Education</option>
-            <option value="Health">Health</option>
-            <option value="Science">Science</option>
-            <option value="Politics">Politics</option>
-            <option value="Fashion">Fashion</option>
-            <option value="Music">Music</option>
-            <option value="Art">Art</option>
-            <option value="Gaming">Gaming</option>
-            <option value="Photography">Photography</option>
             <option value="Other">Other</option>
           </select>
         </div>

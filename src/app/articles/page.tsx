@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { getImageUrl, generateBlurDataURL } from "@/lib/image";
+import { SiGmail } from "react-icons/si";
 
 // --- Types ---
 type Author = {
@@ -219,8 +220,8 @@ export default function ArticlesPage() {
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition ${activeCategory === category
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   }`}
               >
                 {category}

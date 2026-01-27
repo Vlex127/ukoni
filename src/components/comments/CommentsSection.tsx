@@ -266,15 +266,22 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
               {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
             </time>
           </div>
-          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</div>
-          <div className="mt-2">
-            <button
-              onClick={() => handleReplyClick(comment.id, comment.authorName)}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
-            >
-              <Reply className="w-3.5 h-3.5" /> Reply
-            </button>
+          <div className={`text-sm leading-relaxed whitespace-pre-wrap ${comment.status === 'deleted' ? 'italic text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100' : 'text-gray-700'}`}>
+            {comment.status === 'deleted'
+              ? "This comment violates our user policy and has been removed by a moderator."
+              : comment.content
+            }
           </div>
+          {comment.status !== 'deleted' && (
+            <div className="mt-2">
+              <button
+                onClick={() => handleReplyClick(comment.id, comment.authorName)}
+                className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                <Reply className="w-3.5 h-3.5" /> Reply
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {comment.replies?.length > 0 && (

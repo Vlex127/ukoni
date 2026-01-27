@@ -11,6 +11,7 @@ import {
   Users,
   Eye,
   Download,
+  ExternalLink,
 } from "lucide-react";
 
 interface VisitorData {
@@ -19,7 +20,8 @@ interface VisitorData {
 }
 
 interface TopPage {
-  page: string;
+  path: string;
+  title: string;
   views: number;
   percentage: number;
 }
@@ -56,14 +58,8 @@ export default function AnalyticsPage() {
         const today = new Date().toISOString().split('T')[0];
 
         setVisitorData({
-          currentPeriod: [{
-            date: today,
-            count: data.current_period?.total_visitors || 0
-          }],
-          previousPeriod: [{
-            date: today,
-            count: data.previous_period?.total_visitors || 0
-          }],
+          currentPeriod: data.currentPeriod || [],
+          previousPeriod: data.previousPeriod || [],
           top_pages: data.top_pages || [],
           avg_session: data.avg_session || "0:00",
           traffic_sources: data.traffic_sources || []
@@ -175,24 +171,40 @@ export default function AnalyticsPage() {
       {/* Additional Analytics Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Top Pages */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Top Pages</h3>
-          <div className="space-y-3">
+        <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800">Top Content</h3>
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wider">Top 3 Most Viewed</span>
+          </div>
+
+          <div className="space-y-6">
             {visitorData.top_pages && visitorData.top_pages.length > 0 ? (
               visitorData.top_pages.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0 mr-4">
-                    <div className="text-sm font-medium text-gray-800 truncate" title={item.page}>{item.page}</div>
-                    <div className="text-xs text-gray-500">{item.views.toLocaleString()} views</div>
+                <div key={index} className="flex items-center group/item hover:bg-gray-50/50 p-2 -m-2 rounded-2xl transition-colors">
+                  {/* Rank Number */}
+                  <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 font-bold text-sm mr-4 group-hover/item:bg-blue-50 group-hover/item:text-blue-600 transition-colors">
+                    {index + 1}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="w-20 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${item.percentage}%` }}
-                      />
+
+                  <div className="flex-1 min-w-0 mr-4">
+                    <a
+                      href={item.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-bold text-gray-800 hover:text-blue-600 transition-colors line-clamp-1 flex items-center gap-2"
+                    >
+                      {item.title}
+                      <ExternalLink size={12} className="opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                    </a>
+                    <div className="text-xs text-gray-400 font-medium truncate">{item.path}</div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 items-end min-w-[100px]">
+                    <div className={`text-sm font-bold flex items-center gap-1.5 ${item.views > 100 ? 'text-blue-600' : 'text-gray-700'}`}>
+                      <Eye size={14} className={item.views > 100 ? 'animate-pulse' : ''} />
+                      {item.views.toLocaleString()}
                     </div>
-                    <span className="text-xs text-gray-500 w-8 text-right">{item.percentage}%</span>
+                    <div className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter text-right">Total Hits</div>
                   </div>
                 </div>
               ))

@@ -30,16 +30,21 @@ export async function GET(request: NextRequest) {
     if (eventType) where.event = eventType
     if (postId) where.postId = postId
 
-    // Calculate date ranges
+    // Calculate date ranges for last 7 days and the 7 days before that (14 days total)
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 
-    // Fetch analytics for today and yesterday
+    const sevenDaysAgo = new Date(startOfToday);
+    sevenDaysAgo.setDate(startOfToday.getDate() - 6);
+
+    const fourteenDaysAgo = new Date(sevenDaysAgo);
+    fourteenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Fetch analytics for last 14 days
     const analytics = await prisma.analytics.findMany({
       where: {
         createdAt: {
-          gte: startOfYesterday,
+          gte: fourteenDaysAgo,
         },
         ...where
       },
@@ -47,25 +52,55 @@ export async function GET(request: NextRequest) {
         id: true,
         event: true,
         ipAddress: true,
-        createdAt: true
+        createdAt: true,
+        metadata: true
       }
     });
 
     // Helper to count unique IPs
-    const countUniqueVisitors = (logs: typeof analytics) => {
+    const countUniqueVisitors = (logs: any[]) => {
       const uniqueIPs = new Set(logs.map(log => log.ipAddress).filter(Boolean));
       return uniqueIPs.size;
     };
 
+    // Generate daily stats for a period
+    const getDailyStats = (startDate: Date, days: number) => {
+      const stats = [];
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dayStart = new Date(date);
+        const dayEnd = new Date(date);
+        dayEnd.setDate(date.getDate() + 1);
+
+        const dayLogs = analytics.filter(a => a.createdAt >= dayStart && a.createdAt < dayEnd);
+        stats.push({
+          date: date.toISOString().split('T')[0],
+          count: countUniqueVisitors(dayLogs)
+        });
+      }
+      return stats;
+    };
+
+    const currentPeriodStats = getDailyStats(sevenDaysAgo, 7);
+    const previousPeriodStats = getDailyStats(fourteenDaysAgo, 7);
+
     const todayLogs = analytics.filter(a => a.createdAt >= startOfToday);
-    const yesterdayLogs = analytics.filter(a => a.createdAt >= startOfYesterday && a.createdAt < startOfToday);
+    const yesterdayLogs = analytics.filter(a => a.createdAt >= new Date(startOfToday.getTime() - 86400000) && a.createdAt < startOfToday);
 
-    const topPagesRaw = calculateTopPages(todayLogs);
+    const topPagesRaw = calculateTopPages(analytics);
 
-    // Enrich top pages with titles
-    const topPages = await Promise.all(topPagesRaw.map(async (page) => {
+    // Enrich top pages with titles and exclude admin/api paths
+    const topPages = (await Promise.all(topPagesRaw.map(async (page) => {
+      // Exclude admin, api, and auth paths
+      if (page.path.startsWith('/admin') || page.path.startsWith('/api') || page.path.startsWith('/login')) {
+        return null;
+      }
+
       // Check if it's a blog post or article
-      const match = page.page.match(/^\/(?:blog|articles)\/([^\/]+)$/);
+      const match = page.path.match(/^\/(?:blog|articles)\/([^\/]+)$/);
+      let title = page.path;
+
       if (match && match[1]) {
         const slug = match[1];
         try {
@@ -74,14 +109,14 @@ export async function GET(request: NextRequest) {
             select: { title: true }
           });
           if (post?.title) {
-            return { ...page, page: post.title };
+            title = post.title;
           }
         } catch (e) {
-          // Ignore error and return original page
+          // Ignore error
         }
       }
-      return page;
-    }));
+      return { ...page, title };
+    }))).filter(Boolean).slice(0, 3); // Final limit to top 3 relevant pages
 
     const data = {
       current_period: {
@@ -94,9 +129,11 @@ export async function GET(request: NextRequest) {
         page_visitors: countUniqueVisitors(yesterdayLogs.filter(a => a.event === 'page_view')),
         comment_visitors: countUniqueVisitors(yesterdayLogs.filter(a => a.event === 'comment'))
       },
+      currentPeriod: currentPeriodStats,
+      previousPeriod: previousPeriodStats,
       top_pages: topPages,
-      avg_session: calculateAvgSession(todayLogs),
-      traffic_sources: calculateTrafficSources(todayLogs)
+      avg_session: calculateAvgSession(analytics),
+      traffic_sources: calculateTrafficSources(analytics)
     };
 
     return NextResponse.json(data);
@@ -122,9 +159,9 @@ function calculateTopPages(logs: any[]) {
 
   const sortedPages = Object.entries(pageViews)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-    .map(([page, views]) => ({
-      page,
+    .slice(0, 20)
+    .map(([path, views]) => ({
+      path,
       views,
       percentage: Math.round((views / logs.filter(l => l.event === 'page_view').length) * 100) || 0
     }));

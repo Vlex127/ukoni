@@ -19,6 +19,7 @@ import {
   BarChart3,
   RefreshCw
 } from "lucide-react";
+import { Spinner } from '@/components/ui/spinner';
 
 interface Post {
   id: string;
@@ -80,6 +81,9 @@ export default function PostsPage() {
   }, []);
 
   const fetchPosts = async () => {
+    // Only set loading to true if we don't have posts yet (initial load)
+    if (posts.length === 0) setLoading(true);
+
     try {
       const response = await fetch('/api/posts', {
         cache: 'no-store', // Disable caching to see latest view counts
@@ -306,13 +310,12 @@ export default function PostsPage() {
       )}
 
       {/* --- Main Content Area --- */}
-      {loading ? (
-        <div className="text-center py-20 bg-white rounded-[2rem] shadow-sm">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-400">Loading your content...</p>
+      {loading && posts.length === 0 ? (
+        <div className="flex items-center justify-center py-20 bg-white rounded-[2rem] shadow-sm">
+          <Spinner />
         </div>
       ) : filteredPosts.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-[2rem] shadow-sm flex flex-col items-center">
+        <div className="flex items-center justify-center py-20 bg-white rounded-[2rem] shadow-sm flex flex-col items-center">
           <div className="bg-orange-50 p-6 rounded-full mb-4">
             <FileText size={40} className="text-orange-400" />
           </div>

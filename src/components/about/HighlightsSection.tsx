@@ -1,5 +1,5 @@
 import { Award as AwardIcon, Globe as GlobeIcon, Zap as ImpactIcon } from "lucide-react";
-
+import { SiGmail } from "react-icons/si";
 interface HighlightItemProps {
   icon: React.ReactNode;
   title: string;
@@ -64,10 +64,7 @@ export const HighlightsSection = () => (
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200"
           >
             Get in Touch
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
+            <SiGmail size={20} />
           </a>
         </div>
       </div>

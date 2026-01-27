@@ -30,22 +30,16 @@ const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 // Helper function to format data for the chart
 const formatChartData = (current: VisitorData[], previous: VisitorData[]) => {
-  return months.map((month, index) => {
-    const currentMonth = index + 1; // 1-12
-    const currentData = current.find(item => {
-      const date = new Date(item.date);
-      return date.getMonth() + 1 === currentMonth;
-    });
-    
-    const previousData = previous.find(item => {
-      const date = new Date(item.date);
-      return date.getMonth() + 1 === currentMonth;
-    });
+  return current.map((item, index) => {
+    const prevItem = previous[index];
+    const date = new Date(item.date);
+    // Format: "Jan 27"
+    const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     return {
-      name: month,
-      thisYear: currentData?.count || 0,
-      prevYear: previousData?.count || 0,
+      name: label,
+      current: item.count,
+      previous: prevItem?.count || 0,
     };
   });
 };
@@ -59,13 +53,13 @@ export default function VisitorsChart({ data, loading = false, error = null }: V
     if (data) {
       const formattedData = formatChartData(data.currentPeriod, data.previousPeriod);
       setChartData(formattedData);
-      
+
       // Calculate total visitors for current period
       const currentTotal = data.currentPeriod.reduce((sum, item) => sum + item.count, 0);
       const previousTotal = data.previousPeriod.reduce((sum, item) => sum + item.count, 0);
-      
+
       setTotalVisitors(currentTotal);
-      
+
       // Calculate percentage change
       if (previousTotal > 0) {
         const change = ((currentTotal - previousTotal) / previousTotal) * 100;
@@ -115,11 +109,11 @@ export default function VisitorsChart({ data, loading = false, error = null }: V
             margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
           >
             <defs>
-              <linearGradient id="colorThisYear" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="colorPrevYear" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="colorPrevious" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
               </linearGradient>
@@ -136,22 +130,31 @@ export default function VisitorsChart({ data, loading = false, error = null }: V
               tickLine={false}
               tick={{ fill: "#9ca3af", fontSize: 12 }}
             />
-            <Tooltip />
-            <Area
-              type="monotone"
-              dataKey="thisYear"
-              stroke="#3b82f6"
-              fillOpacity={1}
-              fill="url(#colorThisYear)"
-              strokeWidth={2}
+            <Tooltip
+              formatter={(value: any, name: string) => [
+                value,
+                name === 'current' ? 'Current Week' : 'Previous Week'
+              ]}
+              labelStyle={{ color: '#1f2937', fontWeight: 'bold' }}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />
             <Area
               type="monotone"
-              dataKey="prevYear"
+              dataKey="current"
+              stroke="#3b82f6"
+              fillOpacity={1}
+              fill="url(#colorCurrent)"
+              strokeWidth={2}
+              name="current"
+            />
+            <Area
+              type="monotone"
+              dataKey="previous"
               stroke="#22c55e"
               fillOpacity={1}
-              fill="url(#colorPrevYear)"
+              fill="url(#colorPrevious)"
               strokeWidth={2}
+              name="previous"
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -163,7 +166,7 @@ export default function VisitorsChart({ data, loading = false, error = null }: V
 // Default export with sample data for storybook/demo
 export const VisitorsChartWithSampleData = () => {
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
     // Simulate loading
     const timer = setTimeout(() => setIsLoading(false), 1000);

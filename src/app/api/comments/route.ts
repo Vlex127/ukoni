@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const postId = searchParams.get('postId')
 
     const where: any = {}
-    
+
     if (status) where.status = status
     if (postId) where.postId = postId
 
@@ -57,16 +57,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     console.log('Received comment data:', body)
-    
+
     const validatedData = commentSchema.parse(body)
     console.log('Validated comment data:', validatedData)
 
     const comment = await prisma.comment.create({
       data: {
         ...validatedData,
-        ipAddress: request.headers.get('x-forwarded-for') || 
-                   request.headers.get('x-real-ip') || 
-                   '127.0.0.1',
+        status: 'approved',
+        ipAddress: request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
+          '127.0.0.1',
         userAgent: request.headers.get('user-agent') || '',
       },
       include: {

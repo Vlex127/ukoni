@@ -133,8 +133,21 @@ export async function DELETE(
 
     const { slug } = await params
 
-    const post = await prisma.post.delete({
-      where: { slug }
+    const postToDelete = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { id: slug },
+          { slug: slug }
+        ]
+      }
+    })
+
+    if (!postToDelete) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    }
+
+    await prisma.post.delete({
+      where: { id: postToDelete.id }
     })
 
     return NextResponse.json({ message: 'Post deleted successfully' })

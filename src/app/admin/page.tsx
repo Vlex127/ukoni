@@ -13,6 +13,7 @@ import {
   Plus,
   Users,
   Eye,
+  ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -76,7 +77,7 @@ export default function AdminDashboard() {
   }
 
   const [visitorData, setVisitorData] = useState<VisitorChartData>({ currentPeriod: [], previousPeriod: [] });
-  const [topPages, setTopPages] = useState<Array<{ page: string; views: number; percentage: number }>>([]);
+  const [topPages, setTopPages] = useState<Array<{ path: string; views: number; percentage: number; title?: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -352,21 +353,30 @@ export default function AdminDashboard() {
           <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4">Top Pages</h3>
           <div className="space-y-3">
             {topPages.map((item, index) => (
-              <div key={index} className="flex items-center justify-between">
+              <div key={index} className="flex items-center group/item">
                 <div className="flex-1 min-w-0 mr-4">
-                  <div className="text-sm font-medium text-gray-800 truncate" title={item.page}>
-                    {item.page}
-                  </div>
-                  <div className="text-xs text-gray-500">{item.views.toLocaleString()} views</div>
+                  <a
+                    href={item.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-gray-800 truncate block hover:text-blue-600 transition-colors flex items-center gap-2"
+                  >
+                    {item.title || item.path}
+                    <ExternalLink size={12} className="opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                  </a>
+                  <div className="text-[10px] text-gray-400 truncate">{item.path}</div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="w-20 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${item.percentage}%` }}
-                    />
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-20 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-gray-700 w-8 text-right">{item.percentage}%</span>
                   </div>
-                  <span className="text-xs text-gray-500 w-8 text-right">{item.percentage}%</span>
+                  <div className="text-[10px] text-gray-400 font-medium">{item.views.toLocaleString()} views</div>
                 </div>
               </div>
             ))}

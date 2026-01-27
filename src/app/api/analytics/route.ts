@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
       currentPeriod: currentPeriodStats,
       previousPeriod: previousPeriodStats,
       top_pages: topPages,
-      avg_session: calculateAvgSession(analytics),
+      avg_session: calculateAvgSession(todayLogs),
       traffic_sources: calculateTrafficSources(analytics)
     };
 

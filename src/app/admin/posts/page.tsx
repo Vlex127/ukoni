@@ -381,7 +381,7 @@ export default function PostsPage() {
                           <button onClick={() => openEditModal(post)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                             <Edit3 size={18} />
                           </button>
-                          <button onClick={() => handleDelete(post.id)} className="p-2 text-gray-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors">
+                          <button onClick={() => handleDelete(post.slug)} className="p-2 text-gray-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -448,7 +448,7 @@ export default function PostsPage() {
                       <Edit3 size={18} />
                     </button>
                     <button
-                      onClick={() => handleDelete(post.id)}
+                      onClick={() => handleDelete(post.slug)}
                       className="p-2 bg-pink-50 text-pink-600 rounded-lg"
                     >
                       <Trash2 size={18} />

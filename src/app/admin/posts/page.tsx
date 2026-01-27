@@ -15,7 +15,9 @@ import {
   Filter,
   CalendarDays,
   User,
-  Eye
+  Eye,
+  BarChart3,
+  RefreshCw
 } from "lucide-react";
 
 interface Post {
@@ -80,6 +82,7 @@ export default function PostsPage() {
   const fetchPosts = async () => {
     try {
       const response = await fetch('/api/posts', {
+        cache: 'no-store', // Disable caching to see latest view counts
         headers: {
           "Content-Type": "application/json",
         },
@@ -254,6 +257,13 @@ export default function PostsPage() {
             />
           </div>
           <button
+            onClick={fetchPosts}
+            className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 px-4 py-3 rounded-xl md:rounded-2xl font-medium transition-all shadow-sm border border-gray-100 active:scale-95"
+            title="Refresh Data"
+          >
+            <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+          </button>
+          <button
             onClick={() => { closeModal(); setShowCreateModal(true); }}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl md:rounded-2xl font-medium transition-all shadow-lg shadow-blue-200 active:scale-95"
           >
@@ -261,6 +271,39 @@ export default function PostsPage() {
           </button>
         </div>
       </div>
+
+      {/* --- Stats Summary Section --- */}
+      {!loading && posts.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2">
+              <FileText size={20} />
+            </div>
+            <span className="text-2xl font-bold text-gray-800">{posts.length}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Total Posts</span>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-2">
+              <Eye size={20} />
+            </div>
+            <span className="text-2xl font-bold text-gray-800">
+              {posts.reduce((acc, p) => acc + (p.viewCount || 0), 0).toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Total Views</span>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mb-2">
+              <BarChart3 size={20} />
+            </div>
+            <span className="text-sm font-bold text-gray-800 line-clamp-1">
+              {[...posts].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))[0]?.title || 'N/A'}
+            </span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Most Popular</span>
+          </div>
+        </div>
+      )}
 
       {/* --- Main Content Area --- */}
       {loading ? (
@@ -322,8 +365,12 @@ export default function PostsPage() {
                         <StatusBadge status={post.status} />
                       </td>
                       <td className="py-4">
-                        <div className="text-sm font-medium text-gray-600">
-                          {post.viewCount} <span className="text-gray-400 font-normal text-xs">views</span>
+                        <div className="flex flex-col gap-1">
+                          <div className={`text-sm font-bold flex items-center gap-1.5 ${post.viewCount > 100 ? 'text-blue-600' : 'text-gray-700'}`}>
+                            <Eye size={14} className={post.viewCount > 100 ? 'animate-pulse' : ''} />
+                            {post.viewCount.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Total Hits</div>
                         </div>
                       </td>
                       <td className="py-4 pr-4 text-right">
@@ -380,9 +427,9 @@ export default function PostsPage() {
                     <span className="text-xs font-medium text-gray-600">{post.category || "Uncategorized"}</span>
                   </div>
                   <div className="flex flex-col gap-1 items-end">
-                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Views</span>
-                    <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                      <Eye size={12} /> {post.viewCount}
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Popularity</span>
+                    <div className={`flex items-center gap-1.5 text-xs font-bold ${post.viewCount > 100 ? 'text-blue-600' : 'text-gray-600'}`}>
+                      <Eye size={12} /> {post.viewCount.toLocaleString()} <span className="text-[10px] font-normal opacity-70">views</span>
                     </div>
                   </div>
                 </div>

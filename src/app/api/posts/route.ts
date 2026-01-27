@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 const postSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  slug: z.string().min(1, "Slug is required"),
+  slug: z.string().optional(),
   content: z.string().min(1, "Content is required"),
   excerpt: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
@@ -19,6 +19,19 @@ const postSchema = z.object({
   isFeatured: z.boolean().default(false),
 })
 
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')     // Replace spaces with -
+    .replace(/[^\w-]+/g, '')     // Remove all non-word chars
+    .replace(/--+/g, '-')       // Replace multiple - with single -
+    .replace(/^-+/, '')         // Trim - from start of text
+    .replace(/-+$/, '')         // Trim - from end of text
+    + '-' + Math.random().toString(36).substring(2, 7) // Add random string for uniqueness
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -30,7 +43,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     const where: any = {}
-    
+
     if (status) where.status = status
     if (category) where.category = category
     if (featured === 'true') where.isFeatured = true
@@ -71,8 +84,16 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Posts GET error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch posts' },
+      {
+        error: 'Failed to fetch posts',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -81,7 +102,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -91,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     console.log('Received post data:', body)
-    
+
     let validatedData
     try {
       validatedData = postSchema.parse(body)
@@ -99,7 +120,7 @@ export async function POST(request: NextRequest) {
       console.error('Validation error:', validationError)
       if (validationError instanceof z.ZodError) {
         return NextResponse.json(
-          { error: 'Validation failed', details: validationError.errors },
+          { error: 'Validation failed', details: validationError.issues },
           { status: 400 }
         )
       }
@@ -111,9 +132,13 @@ export async function POST(request: NextRequest) {
 
     console.log('Validated data:', validatedData)
 
+    // Generate slug if not provided
+    const slug = validatedData.slug || slugify(validatedData.title)
+
     const post = await prisma.post.create({
       data: {
         ...validatedData,
+        slug,
         authorId: session.user.id,
         publishedAt: validatedData.status === 'published' ? new Date() : null,
       },

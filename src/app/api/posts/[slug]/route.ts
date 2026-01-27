@@ -10,8 +10,15 @@ export async function GET(
   try {
     const { slug } = await params
 
-    const post = await prisma.post.findUnique({
+    // Atomic update: Increment viewCount AND fetch the post in one operation
+    // This is the "New Format" for tracking views more reliably
+    const post = await prisma.post.update({
       where: { slug },
+      data: {
+        viewCount: {
+          increment: 1
+        }
+      },
       include: {
         author: {
           select: {
@@ -37,7 +44,27 @@ export async function GET(
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error('Post GET error:', error)
+    console.error('Post GET/View error:', error)
+
+    // Fallback: If update fails (e.g. record not found in a race condition), try finding without update
+    try {
+      const { slug } = await params
+      const post = await prisma.post.findUnique({
+        where: { slug },
+        include: {
+          author: {
+            select: { id: true, username: true, fullName: true }
+          },
+          _count: {
+            select: { comments: true }
+          }
+        }
+      })
+      if (post) return NextResponse.json(post)
+    } catch (fallbackError) {
+      console.error('Post fallback GET error:', fallbackError)
+    }
+
     return NextResponse.json(
       { error: 'Failed to fetch post' },
       { status: 500 }
@@ -51,7 +78,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -61,7 +88,7 @@ export async function PUT(
 
     const { slug } = await params
     const body = await request.json()
-    
+
     const post = await prisma.post.update({
       where: { slug },
       data: {
@@ -96,7 +123,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },

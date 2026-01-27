@@ -7,6 +7,7 @@ export async function POST(
 ) {
     try {
         const { slug } = await params
+        console.log(`View increment: API hit for slug [${slug}]`)
 
         // Increment view count
         const post = await prisma.post.update({
@@ -18,9 +19,12 @@ export async function POST(
             },
             select: {
                 id: true,
-                viewCount: true
+                viewCount: true,
+                title: true
             }
         })
+
+        console.log(`View increment: Success for [${post.title}]. New count: ${post.viewCount}`)
 
         return NextResponse.json({
             success: true,

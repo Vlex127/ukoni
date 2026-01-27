@@ -134,7 +134,9 @@ export default function AdminDashboard() {
       const subscribersUrl = getApiUrl("subscribers");
 
       const [postsRes, commentsRes, subsRes] = await Promise.all([
-        fetch(postsUrl), fetch(commentsUrl), fetch(subscribersUrl)
+        fetch(postsUrl, { cache: 'no-store' }),
+        fetch(commentsUrl, { cache: 'no-store' }),
+        fetch(subscribersUrl, { cache: 'no-store' })
       ]);
 
       const postsData = await postsRes.json();
@@ -258,9 +260,9 @@ export default function AdminDashboard() {
             bg="bg-blue-50"
           />
           <StatCard
-            icon={<FileText size={24} />}
-            label="Published"
-            value={stats.totalPosts}
+            icon={<Eye size={24} />}
+            label="Total Views"
+            value={stats.totalViews}
             color="text-indigo-600"
             bg="bg-indigo-50"
           />

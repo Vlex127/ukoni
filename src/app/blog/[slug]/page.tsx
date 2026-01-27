@@ -27,7 +27,7 @@ interface Post {
   };
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFoundError, setNotFoundError] = useState(false);
@@ -36,8 +36,11 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   useEffect(() => {
     async function fetchPost() {
       try {
+        const { slug } = await params;
+        console.log(`Blog: Fetching post with slug [${slug}]`);
+
         // Fetch the post
-        const response = await fetch(`/api/posts/${params.slug}`);
+        const response = await fetch(`/api/posts/${slug}`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -48,21 +51,17 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
         const data = await response.json();
         setPost(data);
-
-        // Increment view count (fire and forget)
-        fetch(`/api/posts/${params.slug}/view`, {
-          method: 'POST'
-        }).catch(err => console.error('Failed to increment view count:', err));
+        console.log(`Blog: Post loaded. Current view count: ${data.viewCount}`);
 
       } catch (error) {
-        console.error('Failed to fetch post:', error);
+        console.error('Blog: Failed to fetch post:', error);
       } finally {
         setLoading(false);
       }
     }
 
     fetchPost();
-  }, [params.slug]);
+  }, [params]);
 
   if (loading) {
     return (

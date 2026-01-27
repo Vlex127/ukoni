@@ -12,34 +12,49 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            console.log('Auth: Missing credentials')
+            return null
           }
-        })
 
-        if (!user || !user.hashedPassword) {
+          console.log('Auth: Attempting to find user:', credentials.email)
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            }
+          })
+
+          if (!user || !user.hashedPassword) {
+            console.log('Auth: User not found or no password:', credentials.email)
+            return null
+          }
+
+          console.log('Auth: Verifying password for user:', user.email)
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.hashedPassword
+          )
+
+          if (!isPasswordValid) {
+            console.log('Auth: Invalid password for user:', user.email)
+            return null
+          }
+
+          console.log('Auth: Successfully authenticated user:', user.email)
+          return {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            name: user.fullName || null,
+          }
+        } catch (error) {
+          console.error('Auth: Error during authorization:', error)
+          console.error('Auth error details:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+          })
           return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.hashedPassword
-        )
-
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          name: user.fullName || null,
         }
       }
     })
@@ -56,14 +71,14 @@ export const authOptions: NextAuthOptions = {
       }
       return token
     },
-async session({ session, token }) {
-  if (token) {
-    session.user.id = token.id as string
-    session.user.username = token.username as string
-    session.user.name = (token as any).name as string // Changed from fullName to name
-  }
-  return session
-},
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string
+        session.user.username = token.username as string
+        session.user.name = (token as any).name as string // Changed from fullName to name
+      }
+      return session
+    },
   },
   pages: {
     signIn: '/login',

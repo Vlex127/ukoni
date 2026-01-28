@@ -85,6 +85,7 @@ model Post {
   metaDescription        String?   @db.Text @map("meta_description")
   viewCount              Int       @default(0) @map("view_count")
   isFeatured             Boolean   @default(false) @map("is_featured")
+  notificationSent       Boolean   @default(false) @map("notification_sent")
   publishedAt            DateTime? @map("published_at")
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")

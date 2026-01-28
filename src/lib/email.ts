@@ -231,6 +231,67 @@ Founder, Ukoni
       text,
     });
   }
+
+  async sendFeaturedPostNotification(emails: string[], post: { title: string, slug: string, excerpt: string | null }): Promise<void> {
+    if (emails.length === 0) return;
+
+    const subject = `✨ New Featured Article: ${post.title}`;
+    const postUrl = `${process.env.NEXT_PUBLIC_APP_URL}/articles/${post.slug}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .container { background-color: white; border-radius: 12px; padding: 40px; border: 1px solid #e5e7eb; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .logo { color: #2563eb; font-size: 24px; font-weight: bold; }
+          h1 { color: #1f2937; font-size: 24px; margin-bottom: 20px; }
+          .excerpt { color: #4b5563; margin-bottom: 30px; font-style: italic; border-left: 4px solid #e5e7eb; padding-left: 20px; }
+          .cta-button { display: inline-block; background: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; }
+          .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">Ukoni</div>
+            <h1>${post.title}</h1>
+          </div>
+          <div class="content">
+            <p>Hi there,</p>
+            <p>We've just published a new featured article that we think you'll love!</p>
+            <div class="excerpt">
+              "${post.excerpt || 'Read the full story to discover more...'}"
+            </div>
+            <div style="text-align: center;">
+              <a href="${postUrl}" class="cta-button">Read Full Article</a>
+            </div>
+          </div>
+          <div class="footer">
+            <p>© 2026 Ukoni. All rights reserved.</p>
+            <p>You received this because you subscribed to Ukoni.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // To preserve privacy and efficiency, we send emails in chunks or use BCC
+    // For simplicity here, we'll loop, but in production consider BCC or a service like Resend/SendGrid
+    const sendPromises = emails.map(email =>
+      this.sendEmail({
+        to: email,
+        subject,
+        html,
+        text: `New featured article on Ukoni: ${post.title}\n\nRead it here: ${postUrl}`
+      })
+    );
+
+    await Promise.allSettled(sendPromises);
+  }
 }
 
 export const emailService = new EmailService();

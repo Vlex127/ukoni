@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { emailService } from '@/lib/email'
 
 export async function GET(
   request: NextRequest,
@@ -106,6 +107,30 @@ export async function PUT(
         }
       }
     })
+
+    // Trigger email notification if post is newly featured and published
+    if (post.isFeatured && post.status === 'published' && !(post as any).notificationSent) {
+      try {
+        const subscribers = await prisma.subscriber.findMany({
+          where: { isActive: true },
+          select: { email: true }
+        });
+        const emails = subscribers.map(s => s.email);
+
+        emailService.sendFeaturedPostNotification(emails, {
+          title: post.title,
+          slug: post.slug,
+          excerpt: post.excerpt
+        }).then(async () => {
+          await (prisma.post as any).update({
+            where: { id: post.id },
+            data: { notificationSent: true }
+          });
+        }).catch(err => console.error('Notification error:', err));
+      } catch (err) {
+        console.error('Failed to notify subscribers:', err);
+      }
+    }
 
     return NextResponse.json(post)
   } catch (error) {

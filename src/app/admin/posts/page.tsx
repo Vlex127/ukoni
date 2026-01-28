@@ -17,8 +17,11 @@ import {
   User,
   Eye,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  Type
 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Post {
@@ -75,6 +78,7 @@ export default function PostsPage() {
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
 
   useEffect(() => {
     fetchPosts();
@@ -226,6 +230,7 @@ export default function PostsPage() {
     setShowCreateModal(false);
     setEditingPost(null);
     setImagePreview(null);
+    setActiveTab('write');
     setFormData({
       title: "", content: "", excerpt: "", status: "draft", category: "",
       featuredImage: "",
@@ -571,14 +576,46 @@ export default function PostsPage() {
                 </InputGroup>
 
                 <InputGroup label="Content">
-                  <textarea
-                    rows={8}
-                    required
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border-transparent focus:bg-white border-2 focus:border-blue-100 rounded-xl outline-none transition-all font-mono text-sm"
-                    placeholder="Write your masterpiece here..."
-                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 italic">Markdown supported</span>
+                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('write')}
+                        className={`flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeTab === 'write' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                      >
+                        <Type size={12} /> Write
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('preview')}
+                        className={`flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeTab === 'preview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                      >
+                        <Eye size={12} /> Preview
+                      </button>
+                    </div>
+                  </div>
+
+                  {activeTab === 'write' ? (
+                    <textarea
+                      rows={12}
+                      required
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border-transparent focus:bg-white border-2 focus:border-blue-100 rounded-xl outline-none transition-all font-mono text-sm leading-relaxed"
+                      placeholder="Write your masterpiece here..."
+                    />
+                  ) : (
+                    <div className="w-full min-h-[300px] p-6 bg-gray-50 border-2 border-transparent rounded-xl prose prose-sm max-w-none overflow-y-auto">
+                      {formData.content ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {formData.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <p className="text-gray-400 italic">No content to preview.</p>
+                      )}
+                    </div>
+                  )}
                 </InputGroup>
 
                 <div className="pt-2 pb-20 md:pb-0">

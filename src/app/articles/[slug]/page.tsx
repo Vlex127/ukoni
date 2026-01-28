@@ -6,7 +6,6 @@ import Image from 'next/image';
 import {
   ArrowLeft,
   MoreHorizontal,
-  ThumbsUp,
   MessageSquare,
   Share2,
   Globe,
@@ -21,6 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // --- TYPES ---
 type Author = {
@@ -39,7 +40,7 @@ export type Post = {
   featuredImagePublicId: string | null;
   author: Author;
   publishedAt: string;
-  likes_count?: number;
+  excerpt?: string;
   readTime?: number; // Optional read time
 };
 
@@ -63,8 +64,6 @@ export default function ArticlePage() {
   const [post, setPost] = React.useState<Post | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [showSkeleton, setShowSkeleton] = React.useState(false); // Delayed skeleton state
-
-  const [isLiked, setIsLiked] = React.useState(false);
   const commentsRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -98,9 +97,27 @@ export default function ArticlePage() {
     commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleShare = () => {
+  const handleCopy = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied to clipboard");
+  };
+
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: post?.title,
+          text: post?.title,
+          url: window.location.href,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error("Error sharing:", err);
+        }
+      }
+    } else {
+      handleCopy();
+    }
   };
 
   const stringToColor = (str: string) => {
@@ -212,42 +229,50 @@ export default function ArticlePage() {
           )}
 
           {/* 3. Content */}
-          <div
-            className="prose prose-lg md:prose-xl prose-slate max-w-none 
+          <div className="prose prose-lg md:prose-xl prose-slate max-w-none 
                 prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-900
-                prose-p:text-gray-700 prose-p:leading-relaxed
+                prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-6
                 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-                prose-img:rounded-xl prose-img:shadow-sm"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+                prose-img:rounded-xl prose-img:shadow-sm">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {post.content}
+            </ReactMarkdown>
+          </div>
 
           {/* 4. Interaction Bar (Sticky Bottom on Mobile?) - Keeping inline for now but styled better */}
           <div className="border-y border-gray-100 py-6 my-8 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <button
-                onClick={() => setIsLiked(!isLiked)}
-                className={`flex items-center gap-2 text-sm font-medium transition-colors ${isLiked ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                <div className={`p-2 rounded-full ${isLiked ? 'bg-blue-50' : 'bg-gray-100'}`}>
-                  <ThumbsUp size={20} className={isLiked ? "fill-blue-600" : ""} />
-                </div>
-                <span>{isLiked ? (post.likes_count || 0) + 1 : (post.likes_count || 0)} Likes</span>
-              </button>
-
-              <button
                 onClick={handleScrollToComments}
                 className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                title="View comments"
               >
-                <div className="p-2 rounded-full bg-gray-100">
+                <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-50">
                   <MessageSquare size={20} />
                 </div>
                 <span>Comments</span>
               </button>
+
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                title="Share article"
+              >
+                <div className="p-2 rounded-full bg-gray-100">
+                  <Share2 size={20} />
+                </div>
+                <span>Share</span>
+              </button>
             </div>
 
             <div className="flex gap-2">
-              <button onClick={handleShare} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
-                <Copy size={20} />
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
+                title="Copy link"
+              >
+                <Copy size={18} />
+                <span className="hidden sm:inline">Copy Link</span>
               </button>
             </div>
           </div>

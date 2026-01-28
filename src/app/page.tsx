@@ -11,7 +11,11 @@ import {
   ArrowRight,
   Clock,
   ChevronRight,
-  FileText
+  FileText,
+  Heart,
+  Palette,
+  Anchor,
+  Zap
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -368,19 +372,113 @@ export default function BlogHome() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-12">
 
         {/* --- Hero Section --- */}
-        <section className="mb-16 md:mb-24 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold mb-6 uppercase tracking-wider">
-            Welcome to the blog
+        <section className="mb-20 md:mb-32 relative">
+          <div className="absolute top-0 right-0 -z-10 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-60 transform translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 -z-10 w-72 h-72 bg-teal-50 rounded-full blur-3xl opacity-60 transform -translate-x-1/4 translate-y-1/4"></div>
+
+          <div className="text-center max-w-4xl mx-auto pt-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-8 uppercase tracking-widest shadow-sm">
+              <Sparkles size={14} className="animate-pulse" />
+              Elevating Creative Living
+            </div>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-gray-900 mb-8 leading-[1.1]">
+              Insights for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-blue-500 to-teal-400">conscious</span> soul.
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed max-w-2xl mx-auto font-medium">
+              A curated space for lifestyle, faith-based wisdom, and intentional digital well-being by Ukoni Sophia.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => {
+                  const el = document.getElementById('latest-posts');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 flex items-center gap-2"
+              >
+                Start Reading <ArrowRight size={20} />
+              </button>
+              <Link href="/about" className="px-8 py-4 bg-white text-gray-900 border-2 border-gray-100 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center gap-2">
+                Our Story
+              </Link>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
-            Discover stories that <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-400">ignite</span> your creativity.
-          </h1>
-          <p className="text-lg text-gray-500 mb-8 leading-relaxed">
-            A personal blog by Ukoni Sophia sharing insights on lifestyle, faith based walk, and digital well-being.
-          </p>
+        </section>
+
+        {/* --- Pillars Section --- */}
+        <section className="mb-24">
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Heart, title: 'Faith & Walk', desc: 'Exploring the beauty of a spiritual life in a modern world.', color: 'text-purple-600', bg: 'bg-purple-50' },
+              { icon: Palette, title: 'Creative Living', desc: 'Practical tips to ignite your imagination and daily inspiration.', color: 'text-blue-600', bg: 'bg-blue-50' },
+              { icon: Anchor, title: 'Intentional Living', desc: 'Bridging the gap between digital noise and mindful presence.', color: 'text-teal-600', bg: 'bg-teal-50' },
+            ].map((pillar, i) => (
+              <div key={i} className="group p-8 rounded-3xl bg-white border border-gray-100 hover:border-blue-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+                <div className={`w-14 h-14 ${pillar.bg} ${pillar.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <pillar.icon size={28} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{pillar.title}</h3>
+                <p className="text-gray-500 leading-relaxed">{pillar.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* --- Topics Explorer --- */}
+        <section className="mb-24">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <h2 className="text-3xl font-black text-gray-900 mb-2">Explore Topics</h2>
+              <p className="text-gray-500">Dive into what matters most to you.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {Object.entries(CATEGORY_COLORS).filter(([k]) => k !== 'default').slice(0, 6).map(([cat, colorClass]) => (
+              <Link
+                key={cat}
+                href={`/articles?category=${encodeURIComponent(cat)}`}
+                className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-50 hover:bg-white border border-transparent hover:border-blue-100 hover:shadow-lg transition-all group text-center"
+              >
+                <div className={`w-12 h-12 rounded-full ${colorClass.split(' ')[0]} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                  <Zap size={20} />
+                </div>
+                <span className="text-sm font-bold text-gray-900">{cat}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* --- Meet the Author (Sophia) --- */}
+        <section className="mb-24 p-8 md:p-12 rounded-[40px] bg-gradient-to-br from-blue-600 to-teal-500 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3 animate-pulse"></div>
+          <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <span className="inline-block px-4 py-1 rounded-full bg-white/20 text-xs font-black uppercase tracking-widest">About the Author</span>
+              <h2 className="text-4xl md:text-5xl font-black leading-tight">I'm Sophia, and I'm here to inspire your journey.</h2>
+              <p className="text-lg opacity-90 leading-relaxed font-medium">
+                Through Ukoni, I share my walk of faith, my creative pursuits, and my mission to live a more intentional, digital-balanced life. I believe everyone has a story worth telling and a light worth sharing.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-4">
+                <Link href="/about" className="px-8 py-4 bg-white text-blue-700 rounded-2xl font-bold hover:bg-opacity-90 transition-all shadow-lg">
+                  Read My Story
+                </Link>
+                <div className="flex items-center gap-4 px-4">
+                  <a href="https://www.instagram.com/ukoni_sophia" className="hover:scale-110 transition-transform"><Instagram /></a>
+                  <a href="https://www.linkedin.com/in/adaeze-sophia-ukoni-1b6704a5" className="hover:scale-110 transition-transform"><Linkedin /></a>
+                </div>
+              </div>
+            </div>
+            <div className="relative aspect-[4/5] md:aspect-square w-full max-w-sm mx-auto rounded-3xl overflow-hidden shadow-2xl rotate-3 group hover:rotate-0 transition-transform duration-500 bg-white/20">
+              {/* Note: In a real app we'd use a real author image here */}
+              <div className="w-full h-full flex items-center justify-center bg-blue-100/20 backdrop-blur-sm">
+                <img src="professional.png" alt="Author" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* --- Content Area --- */}
+        <div id="latest-posts"></div>
         {(loading && !showSkeleton) ? null : (loading || (!posts.length && !featuredPost)) ? (
           // Show loading skeleton
           <>

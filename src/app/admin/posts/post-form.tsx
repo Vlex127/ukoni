@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Loader2, Image as ImageIcon, X, Eye, Type } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface PostFormProps {
   post?: {
@@ -41,6 +43,7 @@ export function PostForm({ post }: PostFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
 
   useEffect(() => {
     if (post?.featuredImageUrl) {
@@ -263,16 +266,51 @@ export function PostForm({ post }: PostFormProps) {
       </div>
 
       <div>
-        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-          Content
-        </label>
-        <textarea
-          id="content"
-          rows={10}
-          value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-        />
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="content" className="block text-sm font-medium text-gray-700">
+            Content (Markdown supported)
+          </label>
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setActiveTab('write')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'write' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <Type size={14} /> Write
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preview')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'preview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <Eye size={14} /> Preview
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'write' ? (
+          <textarea
+            id="content"
+            rows={15}
+            value={formData.content}
+            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono text-sm leading-relaxed"
+            placeholder="Write your story using Markdown..."
+          />
+        ) : (
+          <div className="w-full min-h-[400px] p-6 border border-gray-200 rounded-xl bg-gray-50 overflow-y-auto prose prose-blue max-w-none">
+            {formData.content ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {formData.content}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-gray-400 italic">No content to preview yet.</p>
+            )}
+          </div>
+        )}
+        <p className="mt-2 text-xs text-gray-400">
+          Tip: Use Markdown for formatting. Use double enter for new paragraphs.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

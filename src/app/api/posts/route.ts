@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { emailService } from '@/lib/email'
 
 const postSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -154,6 +155,33 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('Created post:', post)
+
+    // Trigger email notification if post is featured and published
+    if ((post as any).isFeatured && (post as any).status === 'published') {
+      try {
+        const subscribers = await prisma.subscriber.findMany({
+          where: { isActive: true },
+          select: { email: true }
+        });
+        const emails = subscribers.map(s => s.email);
+
+        // Don't await this to avoid delaying the response
+        emailService.sendFeaturedPostNotification(emails, {
+          title: post.title,
+          slug: post.slug,
+          excerpt: post.excerpt
+        }).then(async () => {
+          // Mark as sent in DB
+          await (prisma.post as any).update({
+            where: { id: post.id },
+            data: { notificationSent: true }
+          });
+        }).catch(err => console.error('Notification error:', err));
+      } catch (err) {
+        console.error('Failed to fetch subscribers for notification:', err);
+      }
+    }
+
     return NextResponse.json(post, { status: 201 })
   } catch (error) {
     console.error('Posts POST error:', error)

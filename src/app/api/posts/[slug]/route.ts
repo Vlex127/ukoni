@@ -124,19 +124,20 @@ export async function PUT(
         });
         const emails = subscribers.map(s => s.email);
 
-        emailService.sendFeaturedPostNotification(emails, {
+        // Await in serverless to ensure it completes
+        await emailService.sendFeaturedPostNotification(emails, {
           title: post.title,
           slug: post.slug,
           excerpt: post.excerpt
-        }).then(async () => {
-          // Use raw query to bypass client generation issues
-          await prisma.$executeRawUnsafe(
-            'UPDATE posts SET notification_sent = true WHERE id = $1',
-            post.id
-          );
-        }).catch(err => console.error('Notification error:', err));
+        });
+
+        // Use raw query to bypass client generation issues
+        await (prisma as any).$executeRawUnsafe(
+          'UPDATE posts SET notification_sent = true WHERE id = $1',
+          post.id
+        );
       } catch (err) {
-        console.error('Failed to notify subscribers:', err);
+        console.error('Notification error:', err);
       }
     }
 

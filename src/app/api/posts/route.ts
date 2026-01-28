@@ -165,20 +165,20 @@ export async function POST(request: NextRequest) {
         });
         const emails = subscribers.map(s => s.email);
 
-        // Don't await this to avoid delaying the response
-        emailService.sendFeaturedPostNotification(emails, {
+        // Await this in serverless to ensure it completes before response
+        await emailService.sendFeaturedPostNotification(emails, {
           title: post.title,
           slug: post.slug,
           excerpt: post.excerpt
-        }).then(async () => {
-          // Mark as sent in DB using raw query to bypass client generation issues
-          await prisma.$executeRawUnsafe(
-            'UPDATE posts SET notification_sent = true WHERE id = $1',
-            post.id
-          );
-        }).catch(err => console.error('Notification error:', err));
+        });
+
+        // Mark as sent in DB using raw query to bypass client generation issues
+        await (prisma as any).$executeRawUnsafe(
+          'UPDATE posts SET notification_sent = true WHERE id = $1',
+          post.id
+        );
       } catch (err) {
-        console.error('Failed to fetch subscribers for notification:', err);
+        console.error('Notification error:', err);
       }
     }
 

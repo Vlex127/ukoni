@@ -177,7 +177,7 @@ class EmailService {
             <p>Our mission is to create a space where ideas flourish and connections are made. Whether you're here to learn, share, or simply get inspired, you're in the right place.</p>
             
             <div style="text-align: center;">
-              <a href="https://ukoni.com" class="cta-button">Explore Latest Articles</a>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}" class="cta-button">Explore Latest Articles</a>
             </div>
             
             <p>If you have any questions or topics you'd love to see us cover, just reply to this email. We'd love to hear from you!</p>
@@ -193,7 +193,7 @@ class EmailService {
             <div class="social-links">
               <a href="https://linkedin.com/in/adaeze-sophia-ukoni-1b6704a5">LinkedIn</a>
               <a href="https://instagram.com/ukoni_sophia">Instagram</a>
-              <a href="https://ukoni.com">Website</a>
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}">Website</a>
             </div>
             <p style="margin-top: 20px; font-size: 12px;">
               © 2026 Ukoni Inc. All rights reserved.<br>
@@ -217,7 +217,7 @@ What to expect:
 - Behind-the-scenes stories and creative processes
 - Curated resources to fuel your creativity
 
-Visit our website: https://ukoni.com
+Visit our website: ${process.env.NEXT_PUBLIC_APP_URL}
 
 Best regards,
 Adaeze Sophia Ukoni

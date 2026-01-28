@@ -385,7 +385,7 @@ export default function BlogHome() {
               Insights for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-blue-500 to-teal-400">conscious</span> soul.
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed max-w-2xl mx-auto font-medium">
-              A curated space for lifestyle, faith-based wisdom, and intentional digital well-being by Ukoni Sophia.
+              A curated space for lifestyle, faith-based wisdom, and intentional digital well-being by Sophia Ukoni.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button

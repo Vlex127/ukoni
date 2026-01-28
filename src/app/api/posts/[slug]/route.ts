@@ -108,8 +108,15 @@ export async function PUT(
       }
     })
 
+    // Check if notification was already sent using raw SQL (Prisma client is out of sync)
+    const notificationCheck: any[] = await prisma.$queryRawUnsafe(
+      'SELECT notification_sent FROM posts WHERE id = $1',
+      post.id
+    );
+    const wasNotified = notificationCheck[0]?.notification_sent;
+
     // Trigger email notification if post is newly featured and published
-    if (post.isFeatured && post.status === 'published' && !(post as any).notificationSent) {
+    if (post.isFeatured && post.status === 'published' && !wasNotified) {
       try {
         const subscribers = await prisma.subscriber.findMany({
           where: { isActive: true },
@@ -122,10 +129,11 @@ export async function PUT(
           slug: post.slug,
           excerpt: post.excerpt
         }).then(async () => {
-          await (prisma.post as any).update({
-            where: { id: post.id },
-            data: { notificationSent: true }
-          });
+          // Use raw query to bypass client generation issues
+          await prisma.$executeRawUnsafe(
+            'UPDATE posts SET notification_sent = true WHERE id = $1',
+            post.id
+          );
         }).catch(err => console.error('Notification error:', err));
       } catch (err) {
         console.error('Failed to notify subscribers:', err);

@@ -171,11 +171,11 @@ export async function POST(request: NextRequest) {
           slug: post.slug,
           excerpt: post.excerpt
         }).then(async () => {
-          // Mark as sent in DB
-          await (prisma.post as any).update({
-            where: { id: post.id },
-            data: { notificationSent: true }
-          });
+          // Mark as sent in DB using raw query to bypass client generation issues
+          await prisma.$executeRawUnsafe(
+            'UPDATE posts SET notification_sent = true WHERE id = $1',
+            post.id
+          );
         }).catch(err => console.error('Notification error:', err));
       } catch (err) {
         console.error('Failed to fetch subscribers for notification:', err);
